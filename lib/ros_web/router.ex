@@ -6,8 +6,6 @@ defmodule ROSWeb.Router do
   end
 
   scope "/", ROSWeb do
-    pipe_through(:api)
-
-    get("/", SlaveApiController, :recv)
+    post("/", SlaveApiController, :recv)
   end
 end
