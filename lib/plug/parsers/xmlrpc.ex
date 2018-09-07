@@ -2,6 +2,10 @@ defmodule Plug.Parsers.XMLRPC do
   @behaviour Plug.Parsers
   import Plug.Conn
 
+  @moduledoc """
+  A plug for decoding HTTP requests as XMLRPC calls.
+  """
+
   def init(opts), do: opts
 
   def parse(conn, _type, "xml", _headers, opts) do
@@ -27,6 +31,6 @@ defmodule Plug.Parsers.XMLRPC do
         raise "Could not parse XMLRPC call: #{reason}"
     end
   rescue
-    e -> raise Plug.Parsers.ParseError, exception: e
+    e -> reraise Plug.Parsers.ParseError, exception: e
   end
 end
