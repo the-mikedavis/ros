@@ -10,4 +10,6 @@ defmodule ROS.SlaveApi do
   are underscore notation. This sacrifices a small amount of consistency for
   the sake of the Elixir style guide.
   """
+
+  def get_master_uri(_caller_id), do: System.get_env("ROS_MASTER_URI")
 end
