@@ -7,6 +7,7 @@ defmodule Plug.Parsers.XMLRPC do
   """
 
   def init(opts) do
+    IO.inspect(opts)
     {decoder, opts} = Keyword.pop(opts, :xmlrpc_decoder)
 
     unless decoder do
@@ -14,9 +15,11 @@ defmodule Plug.Parsers.XMLRPC do
     end
 
     {decoder, opts}
+    |> IO.inspect
   end
 
   def parse(conn, _type, "xml", _headers, {decoder, opts}) do
+    IO.puts("In the right parse block")
     conn
     |> read_body(opts)
     |> decode(decoder)
@@ -29,7 +32,7 @@ defmodule Plug.Parsers.XMLRPC do
   defp decode({:ok, body, conn}, decoder) do
     case decoder.decode(body) do
       {:ok, parsed} ->
-        {:ok, parsed, conn}
+        {:ok, Map.from_struct(parsed), conn}
 
       {:error, reason} ->
         raise "Could not parse XMLRPC call: #{reason}"
