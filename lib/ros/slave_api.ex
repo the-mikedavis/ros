@@ -1,5 +1,5 @@
 defmodule ROS.SlaveApi do
-  #@behaviour __MODLUE__.Behaviour
+  # @behaviour __MODLUE__.Behaviour
 
   @moduledoc """
   An implementation of the ROS Slave API Behaviour from

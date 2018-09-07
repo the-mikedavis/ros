@@ -12,7 +12,8 @@ config :ros,
 # Configures the endpoint
 config :ros, ROSWeb.Endpoint,
   url: [host: "localhost"],
-  secret_key_base: "MTSG+g7EzHT4mmSGtcFoSevI5gKPd3KPTzIDfP5/7PfK34C+YEQi2A2cz09B0zXA",
+  secret_key_base:
+    "MTSG+g7EzHT4mmSGtcFoSevI5gKPd3KPTzIDfP5/7PfK34C+YEQi2A2cz09B0zXA",
   render_errors: [view: ROSWeb.ErrorView, accepts: ~w(html json)],
   pubsub: [name: ROS.PubSub, adapter: Phoenix.PubSub.PG2]
 
