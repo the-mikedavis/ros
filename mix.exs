@@ -48,7 +48,7 @@ defmodule ROS.MixProject do
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
       {:cowboy, "~> 1.0"},
-      {:xenium, "~> 0.1.0"},
+      {:xenium, git: "https://github.com/the-mikedavis/xenium.git"},
       {:bite, git: "https://github.com/the-mikedavis/bite.git"},
       # Testing and code cleanliness
       {:private, "~> 0.1.1"},
