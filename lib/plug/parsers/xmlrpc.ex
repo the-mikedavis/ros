@@ -6,13 +6,17 @@ defmodule Plug.Parsers.XMLRPC do
   A plug for decoding HTTP requests as XMLRPC calls.
   """
 
-  def init(opts), do: opts
+  def init(opts) do
+    {decoder, opts} = Keyword.pop(opts, :xmlrpc_decoder)
 
-  def parse(conn, _type, "xml", _headers, opts) do
-    decoder =
-      Keyword.get(opts, :xmlrpc_decoder) ||
-        raise ArgumentError, "XMLRPC parser expects a :xmlrpc_decoder option"
+    unless decoder do
+      raise ArgumentError, "XMLRPC parser expects a :xmlrpc_decoder option"
+    end
 
+    {decoder, opts}
+  end
+
+  def parse(conn, _type, "xml", _headers, {decoder, opts}) do
     conn
     |> read_body(opts)
     |> decode(decoder)
