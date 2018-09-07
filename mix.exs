@@ -9,7 +9,15 @@ defmodule ROS.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.html": :test,
+        credo: :test,
+        bless: :test
+      ],
+      test_coverage: [tool: ExCoveralls],
+      aliases: aliases()
     ]
   end
 
@@ -32,6 +40,7 @@ defmodule ROS.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      # Upstream
       {:phoenix, github: "phoenixframework/phoenix", override: true},
       {:phoenix_pubsub, "~> 1.1"},
       {:phoenix_html, "~> 2.11"},
@@ -40,7 +49,34 @@ defmodule ROS.MixProject do
       {:jason, "~> 1.0"},
       {:cowboy, "~> 1.0"},
       {:xenium, "~> 0.1.0"},
-      {:bite, git: "https://github.com/the-mikedavis/bite.git"}
+      {:bite, git: "https://github.com/the-mikedavis/bite.git"},
+      # Testing and code cleanliness
+      {:private, "~> 0.1.1"},
+      {:excoveralls, "~> 0.7", only: :test},
+      {:credo, "~> 0.9", only: :test, runtime: false},
+      {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false}
     ]
+  end
+
+  defp aliases do
+    [
+      bless: [&bless/1]
+    ]
+  end
+
+  defp bless(_) do
+    [
+      {"format", ["--check-formatted"]},
+      {"compile", ["--warnings-as-errors", "--force"]},
+      {"coveralls.html", []},
+      {"credo", []},
+      {"dialyzer", []}
+    ]
+    |> Enum.each(fn {task, args} ->
+      IO.ANSI.format([:cyan, "Running #{task} with args #{inspect(args)}"])
+      |> IO.puts()
+
+      Mix.Task.run(task, args)
+    end)
   end
 end
