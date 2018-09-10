@@ -1,8 +1,12 @@
 defmodule ROS.LocalParameterServer do
   use Agent
 
+  @initial_state %{publishers: %{}, services: %{}}
+
   @doc false
-  def start_link(_opts), do: Agent.start_link(&Map.new/0, name: __MODULE__)
+  def start_link(_opts) do
+    Agent.start_link(fn -> @initial_state end, name: __MODULE__)
+  end
 
   @doc "Update the list of publishers registered to a topic"
   @spec update_publisher_list(String.t(), [String.t()]) :: :ok

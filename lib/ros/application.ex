@@ -9,9 +9,10 @@ defmodule ROS.Application do
     # List all child processes to be supervised
     children = [
       # Start the endpoint when the application starts
-      ROSWeb.Endpoint
+      ROSWeb.Endpoint,
       # Starts a worker by calling: ROS.Worker.start_link(arg)
       # {ROS.Worker, arg},
+      {ROS.LocalParameterServer, %{}}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
