@@ -1,6 +1,8 @@
 defmodule ROS.SlaveApi do
   # @behaviour __MODLUE__.Behaviour
 
+  alias ROS.LocalParameterServer, as: PServer
+
   @moduledoc """
   An implementation of the ROS Slave API Behaviour from
   `ROS.SlaveApi.Behaviour`.
@@ -12,4 +14,10 @@ defmodule ROS.SlaveApi do
   """
 
   def get_master_uri(_caller_id), do: System.get_env("ROS_MASTER_URI")
+
+  def publisher_update("/master", topic, publisher_list) do
+    LocalParameterServer.update_publisher_list(topic, publisher_list)
+
+    [1, "publisher list for #{topic} updated.", 0]
+  end
 end
