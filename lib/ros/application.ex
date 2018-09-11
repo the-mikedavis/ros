@@ -12,7 +12,9 @@ defmodule ROS.Application do
       ROSWeb.Endpoint,
       # Starts a worker by calling: ROS.Worker.start_link(arg)
       # {ROS.Worker, arg},
-      {ROS.LocalParameterServer, %{}}
+      {ROS.LocalParameterServer, %{}},
+      {ROS.Node, %{}},
+      {ROS.Publisher, %{}}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

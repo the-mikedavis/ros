@@ -16,7 +16,7 @@ defmodule ROSWeb.SlaveApiController do
       try do
         apply(ROS.SlaveApi, function_atom, args)
       rescue
-        e in UndefinedFunctionError ->
+        _e in UndefinedFunctionError ->
           [-1, "method not found", function]
       end
 

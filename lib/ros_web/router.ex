@@ -6,6 +6,6 @@ defmodule ROSWeb.Router do
   end
 
   scope "/", ROSWeb do
-    post("/", SlaveApiController, :recv)
+    post("/*path", SlaveApiController, :recv)
   end
 end

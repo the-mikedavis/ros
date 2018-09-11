@@ -20,4 +20,11 @@ defmodule ROS.SlaveApi do
 
     [1, "publisher list for #{topic} updated.", 0]
   end
+
+  def request_topic(caller_id, topic, [["TCPROS"]]) do
+    ip = ROS.Node.get_ip()
+    port_number = ROS.Publisher.register(caller_id, topic)
+
+    [1, "ready on #{ip}:#{port_number}", ["TCPROS", ip, port_number]]
+  end
 end
