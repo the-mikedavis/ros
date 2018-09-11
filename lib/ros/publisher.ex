@@ -30,7 +30,8 @@ defmodule ROS.Publisher do
   end
 
   def handle_info({:tcp, _socket, packet}, state) do
-    IO.inspect(packet, label: "incoming packet", limit: :infinity)
+    # IO.inspect(packet, label: "incoming packet", limit: :infinity)
+    IO.inspect(ROS.Message.parse(packet))
 
     {:noreply, state}
   end
