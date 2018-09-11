@@ -29,4 +29,15 @@ defmodule ROS.Message.ConnectionHeader do
     :tcp_nodelay,
     :latching
   ]
+
+  def into(fields) do
+    map =
+      fields
+      |> Enum.map(&String.split(&1, "="))
+      |> Enum.reduce(%{}, fn [lhs, rhs], acc ->
+        Map.put(acc, String.to_atom(lhs), rhs)
+      end)
+
+    struct(__MODULE__, map)
+  end
 end

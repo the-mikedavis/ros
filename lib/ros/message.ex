@@ -10,22 +10,31 @@ defmodule ROS.Message do
   def parse(packet) do
     [header_field | message] = split_field(packet)
 
-    {split_field(header_field), message}
+    conn_header =
+      header_field
+      |> split_field()
+      |> ROS.Message.ConnectionHeader.into()
+
+    {conn_header, message}
   end
 
   private do
     @block_length 4
 
     @spec split_field(binary()) :: []
-    def split_field(<<>>), do: []
+    defp split_field(<<>>), do: []
 
-    def split_field(binary) do
+    defp split_field(binary) do
       field_length =
         binary
         |> Bite.take(@block_length, 'l')
         |> Bite.to_integer()
 
-      field = binary |> Bite.drop(@block_length)
+      field =
+        binary
+        |> Bite.drop(@block_length)
+        |> Bite.take(field_length)
+        |> Bite.to_string()
 
       rest = Bite.drop(binary, @block_length + field_length)
 
