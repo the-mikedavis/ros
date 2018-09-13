@@ -7,7 +7,7 @@ defmodule ROS.MixProject do
       version: "0.1.0",
       elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: [:phoenix, :gettext] ++ Mix.compilers(),
+      compilers: Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       preferred_cli_env: [
@@ -40,14 +40,7 @@ defmodule ROS.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      # Upstream
-      {:phoenix, github: "phoenixframework/phoenix", override: true},
-      {:phoenix_pubsub, "~> 1.1"},
-      {:phoenix_html, "~> 2.11"},
-      {:phoenix_live_reload, "~> 1.0", only: :dev},
-      {:gettext, "~> 0.11"},
-      {:jason, "~> 1.0"},
-      {:cowboy, "~> 2.4", override: true},
+      {:cowboy, "~> 2.4"},
       {:xenium, git: "https://github.com/the-mikedavis/xenium.git"},
       {:bite, git: "https://github.com/the-mikedavis/bite.git"},
       # Testing and code cleanliness
