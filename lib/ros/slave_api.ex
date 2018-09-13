@@ -1,31 +1,60 @@
 defmodule ROS.SlaveApi do
-  # @behaviour __MODULE__.Behaviour
+  use GenServer
 
-  alias ROS.LocalParameterServer, as: ParamServer
+  @default_state %{publishers: %{}}
 
-  @moduledoc """
-  An implementation of the ROS Slave API Behaviour from
-  `ROS.SlaveApi.Behaviour`.
+  def start_link(opts) do
+    name = Keyword.fetch!(opts, :node_name)
 
-  Note that, as a change from the Slave API as defined
-  [at the ROS wiki](http://wiki.ros.org/ROS/Slave_API), all of these functions
-  are underscore notation. This sacrifices a small amount of consistency for
-  the sake of the Elixir style guide.
-  """
-
-  def get_master_uri(_caller_id), do: System.get_env("ROS_MASTER_URI")
-
-  def publisher_update("/master", topic, publisher_list) do
-    ParamServer.update_publisher_list(topic, publisher_list)
-
-    [1, "publisher list for #{topic} updated.", 0]
+    GenServer.start_link(__MODULE__, opts, name: from_node_name(name))
   end
 
-  def request_topic(caller_id, topic, [["TCPROS"]]) do
-    # TODO: allocate a publisher
-    ip = ROS.Node.get_ip()
-    port_number = 666
+  @impl GenServer
+  def init(node_info) do
+    {:ok, Enum.into(node_info, @default_state)}
+  end
 
-    [1, "ready on #{ip}:#{port_number}", ["TCPROS", ip, port_number]]
+  @spec call(atom(), String.t(), [any()]) :: [any()]
+  def call(name, method, args), do: GenServer.call(name, {method, args})
+
+  @doc "Gets the master URI pointed to by the env var ROS MASTER URI"
+  @spec master_uri() :: String.t()
+  def master_uri, do: System.get_env("ROS_MASTER_URI")
+
+  @doc "Append the node name with \"_api_server\""
+  @spec from_node_name(atom()) :: atom()
+  def from_node_name(name) do
+    String.to_atom(Atom.to_string(name) <> "_api_server")
+  end
+
+  @impl GenServer
+  def handle_call({"getMasterUri", [_caller_id]}, _from, state) do
+    {:reply, [1, "ROS Master Uri", master_uri()], state}
+  end
+
+  def handle_call(
+        {"publisherUpdate", ["/master", topic, publisher_list]},
+        _from,
+        state
+      ) do
+    state = put_in(state[:publishers], topic, publisher_list)
+
+    {:reply, [1, "publisher list for #{topic} updated.", 0], state}
+  end
+
+  def handle_call(
+        {"requestTopic", [_caller_id, _topic, [["TCPROS"]]]},
+        _from,
+        %{uri: {ip, port}} = state
+      ) do
+    # TODO:
+    # find the `publisher` in `state`
+    # ROS.Publisher.connect(publisher, caller_id, topic, "TCPROS")
+    {:reply,
+     [1, "ready on {ip}:{port_number}", ["TCPROS", "ip", "port_number"]], state}
+  end
+
+  def handle_call({fun, _params}, _from, state) do
+    {:relply, [-1, "method not found", fun], state}
   end
 end

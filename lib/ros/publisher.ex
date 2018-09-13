@@ -17,12 +17,26 @@ defmodule ROS.Publisher do
   end
 
   @impl DynamicSupervisor
-  def init(_arg) do
+  def init(opts) do
+    {ip, port} = opts[:uri]
+
+    Xenium.call!(
+      ROS.SlaveApi.master_uri(),
+      "registerPublisher",
+      [
+        Atom.to_string(opts[:node_name]),
+        opts[:topic],
+        opts[:type],
+        "http://#{ip}:#{port}"
+      ]
+    )
+    |> IO.inspect()
+
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  def connect(publisher, caller_id, topic, type, "ROSTCP") do
-    spec = {ROS.TCP, name: caller_id, topic: topic, type: type}
+  def connect(publisher, caller_id, topic, "ROSTCP") do
+    spec = {ROS.TCP, name: caller_id, topic: topic}
 
     DynamicSupervisor.start_child(publisher, spec)
   end

@@ -6,17 +6,27 @@ defmodule ROS.Node do
   @behaviour :cowboy_handler
 
   @xml_header %{"Content-Type" => "text/xml"}
-  @default_opts [
-    dispatch: :cowboy_router.compile([{:_, [{:_, __MODULE__, []}]}])
-  ]
+  @default_opts []
+  @api_server {ROS.SlaveApi, []}
 
   @doc false
   @spec start_link({[{module(), Keyword.t()}], Keyword.t()}) :: {:ok, pid()}
   def start_link({children, user_opts}) do
-    opts = Keyword.merge(user_opts, @default_opts)
-    name = Keyword.fetch!(opts, :name)
+    name = Keyword.fetch!(user_opts, :name)
 
-    Supervisor.start_link(__MODULE__, {children, name, opts}, name: name)
+    dispatch =
+      :cowboy_router.compile([
+        {:_, [{:_, __MODULE__, [ROS.SlaveApi.from_node_name(name)]}]}
+      ])
+
+    opts =
+      user_opts
+      |> Keyword.merge(@default_opts)
+      |> Keyword.put(:dispatch, dispatch)
+
+    Supervisor.start_link(__MODULE__, {[@api_server | children], name, opts},
+      name: name
+    )
   end
 
   @impl Supervisor
@@ -29,7 +39,9 @@ defmodule ROS.Node do
   end
 
   @impl :cowboy_handler
-  def init(req, state), do: {:ok, handle(req), state}
+  def init(req, [api_server_name] = state) do
+    {:ok, handle(req, api_server_name), state}
+  end
 
   @impl :cowboy_handler
   def terminate(_reason, _request, _state), do: :ok
@@ -56,12 +68,12 @@ defmodule ROS.Node do
       end
     end
 
-    @spec handle(any()) :: any()
-    defp handle(req) do
+    @spec handle(any(), atom()) :: any()
+    defp handle(req, api_server_name) do
       with true <- :cowboy_req.has_body(req),
            {:ok, body, _req} <- :cowboy_req.read_body(req),
            {:ok, %XMLRPC.MethodCall{} = parsed} <- XMLRPC.decode(body) do
-        :cowboy_req.reply(200, @xml_header, reply(parsed), req)
+        :cowboy_req.reply(200, @xml_header, reply(parsed, api_server_name), req)
       else
         a ->
           Logger.error(a)
@@ -70,22 +82,14 @@ defmodule ROS.Node do
       end
     end
 
-    @spec reply(%XMLRPC.MethodCall{}) :: binary()
-    defp reply(%XMLRPC.MethodCall{method_name: fun, params: args} = msg) do
+    @spec reply(%XMLRPC.MethodCall{}, atom()) :: binary()
+    defp reply(
+           %XMLRPC.MethodCall{method_name: fun, params: args} = msg,
+           api_server_name
+         ) do
       Logger.debug(fn -> "Received #{inspect(msg)}." end)
 
-      function_atom =
-        fun
-        |> Macro.underscore()
-        |> String.to_atom()
-
-      return =
-        try do
-          apply(ROS.SlaveApi, function_atom, args)
-        rescue
-          _e in UndefinedFunctionError ->
-            [-1, "method not found", fun]
-        end
+      return = ROS.SlaveApi.call(api_server_name, fun, args)
 
       XMLRPC.encode!(%XMLRPC.MethodResponse{param: return})
     end
