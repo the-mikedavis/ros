@@ -10,10 +10,10 @@ defmodule ROS.Publisher do
   (depending on when it is spun up).
   """
 
-  def start_link(arg, opts \\ []) do
+  def start_link(opts \\ []) do
     name = Keyword.fetch!(opts, :name)
 
-    DynamicSupervisor.start_link(__MODULE__, arg, name: name)
+    DynamicSupervisor.start_link(__MODULE__, opts, name: name)
   end
 
   @impl DynamicSupervisor
@@ -24,7 +24,7 @@ defmodule ROS.Publisher do
   def connect(publisher, caller_id, topic, type, "ROSTCP") do
     spec = {ROS.TCP, name: caller_id, topic: topic, type: type}
 
-    DynamicSupervisor.start_child(__MODULE__, spec)
+    DynamicSupervisor.start_child(publisher, spec)
   end
 
   def send(publisher, message) do
