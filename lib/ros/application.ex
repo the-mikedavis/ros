@@ -7,7 +7,7 @@ defmodule ROS.Application do
 
   def start(_type, _args) do
     children = [
-      {ROS.Node, [name: :mynode]}
+      {ROS.Node, {[], [name: :mynode]}}
     ]
 
     opts = [strategy: :one_for_one, name: ROS.Supervisor]
