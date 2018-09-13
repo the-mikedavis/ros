@@ -8,8 +8,9 @@ defmodule ROS.Application do
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
+      {ROS.Node, [name: :mynode]}
       # Start the endpoint when the application starts
-      {ROSWeb.Endpoint, [port: 0]}
+      # {ROSWeb.Endpoint, [port: 0]}
       # Starts a worker by calling: ROS.Worker.start_link(arg)
       # {ROS.Worker, arg}
     ]
