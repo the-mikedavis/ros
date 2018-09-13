@@ -47,7 +47,7 @@ defmodule ROS.MixProject do
       {:phoenix_live_reload, "~> 1.0", only: :dev},
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
-      {:cowboy, "~> 1.0"},
+      {:cowboy, "~> 2.4", override: true},
       {:xenium, git: "https://github.com/the-mikedavis/xenium.git"},
       {:bite, git: "https://github.com/the-mikedavis/bite.git"},
       # Testing and code cleanliness

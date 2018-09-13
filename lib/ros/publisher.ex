@@ -1,39 +1,37 @@
 defmodule ROS.Publisher do
-  use GenServer
+  use DynamicSupervisor
 
-  def start_link(_opts) do
-    GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+  @moduledoc """
+  A ROS Publisher is a sender in asynchronous, one-to-many communication.
+
+  ROS Publishers are best modeled by OTP Dynamic Supervisors. Dynamic
+  Supervisors allow spawning of child processes on demand, which is perfect
+  because a ROS Subscriber node can connect to any publisher on demand
+  (depending on when it is spun up).
+  """
+
+  def start_link(arg, opts \\ []) do
+    name = Keyword.fetch!(opts, :name)
+
+    DynamicSupervisor.start_link(__MODULE__, arg, name: name)
   end
 
-  def init(args), do: {:ok, args}
-
-  @spec register(String.t(), String.t()) :: integer()
-  def register(caller_id, topic) do
-    GenServer.call(__MODULE__, {:spawn, caller_id, topic})
+  @impl DynamicSupervisor
+  def init(_arg) do
+    DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  def handle_call({:spawn, _caller_id, _topic}, _from, state) do
-    {:ok, port} =
-      :gen_tcp.listen(0, [:binary, reuseaddr: true, active: true, packet: 0])
+  def connect(publisher, caller_id, topic, type, "ROSTCP") do
+    spec = {ROS.TCP, name: caller_id, topic: topic, type: type}
 
-    {:ok, port_number} = :inet.port(port)
-
-    GenServer.cast(__MODULE__, {:accept, port})
-
-    {:reply, port_number, state}
+    DynamicSupervisor.start_child(__MODULE__, spec)
   end
 
-  def handle_cast({:accept, port}, state) do
-    {:ok, _socket} = :gen_tcp.accept(port)
-
-    {:noreply, state}
-  end
-
-  def handle_info({:tcp, _socket, packet}, state) do
-    packet
-    |> ROS.Message.parse()
-    |> IO.inspect(label: "incoming message", limit: :infinity)
-
-    {:noreply, state}
+  def send(publisher, message) do
+    publisher
+    |> DynamicSupervisor.which_children()
+    |> Enum.map(fn {_, pid, _type, _module} ->
+      GenServer.cast(pid, {:send, message})
+    end)
   end
 end

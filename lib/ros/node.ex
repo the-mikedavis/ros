@@ -1,12 +1,30 @@
 defmodule ROS.Node do
+  use Supervisor
+
+  @hidden_processes [
+    # the XMLRPC server
+    {ROSWeb.Endpoint, port: 0},
+    # the local paremeter & state server
+    {ROS.LocalParameterServer, %{}}
+  ]
+
+  def start_link(children, opts \\ []) do
+    name = Keyword.fetch!(opts, :name)
+
+    Supervisor.start_link(__MODULE__, children ++ @hidden_processes, name: name)
+  end
+
+  @impl Supervisor
+  def init(children) do
+    Supervisor.init(children, strategy: :one_for_one)
+  end
+
+  ## ------------------------------------ ##
+
   use Agent
 
-  @moduledoc """
-  Helpful functions and macros for ROS Nodes, the ROS molecular unit of worker.
-  """
-
   @doc false
-  def start_link(_opts) do
+  def start_link_2(_opts) do
     {:ok, ips} = :inet.getif()
 
     local_ip =
@@ -21,4 +39,6 @@ defmodule ROS.Node do
   end
 
   def get_ip, do: Agent.get(__MODULE__, fn %{ip: ip} -> ip end)
+
+  def get_uri, do: Agent.get(__MODULE__, fn %{uri: ip} -> ip end)
 end

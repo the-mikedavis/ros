@@ -34,4 +34,8 @@ defmodule ROSWeb.Endpoint do
   )
 
   plug(ROSWeb.Router)
+
+  def init(_key, config) do
+    {:ok, config}
+  end
 end

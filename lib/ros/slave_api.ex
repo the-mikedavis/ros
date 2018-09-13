@@ -1,5 +1,5 @@
 defmodule ROS.SlaveApi do
-  # @behaviour __MODLUE__.Behaviour
+  # @behaviour __MODULE__.Behaviour
 
   alias ROS.LocalParameterServer, as: ParamServer
 
@@ -22,8 +22,9 @@ defmodule ROS.SlaveApi do
   end
 
   def request_topic(caller_id, topic, [["TCPROS"]]) do
+    # TODO: allocate a publisher
     ip = ROS.Node.get_ip()
-    port_number = ROS.Publisher.register(caller_id, topic)
+    port_number = 666
 
     [1, "ready on #{ip}:#{port_number}", ["TCPROS", ip, port_number]]
   end
