@@ -4,10 +4,11 @@ defmodule ROS.Application do
   # TODO: remove once this is reproducible
 
   use Application
+  import ROS.Node.Spec
 
   def start(_type, _args) do
     children = [
-      {ROS.Node, {[], [name: :mynode]}}
+      node(:mynode, [publisher(:mypublisher, "/chatter", "std_msgs/String")])
     ]
 
     opts = [strategy: :one_for_one, name: ROS.Supervisor]

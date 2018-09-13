@@ -1,5 +1,6 @@
 defmodule ROS.Publisher do
   use DynamicSupervisor
+  require Logger
 
   @moduledoc """
   A ROS Publisher is a sender in asynchronous, one-to-many communication.
@@ -20,17 +21,19 @@ defmodule ROS.Publisher do
   def init(opts) do
     {ip, port} = opts[:uri]
 
-    Xenium.call!(
-      ROS.SlaveApi.master_uri(),
-      "registerPublisher",
-      [
-        Atom.to_string(opts[:node_name]),
-        opts[:topic],
-        opts[:type],
-        "http://#{ip}:#{port}"
-      ]
-    )
-    |> IO.inspect()
+    # TODO: wait until this succeeds
+    Logger.debug(fn ->
+      inspect(Xenium.call!(
+        ROS.SlaveApi.master_uri(),
+        "registerPublisher",
+        [
+          Atom.to_string(opts[:node_name]),
+          opts[:topic],
+          opts[:type],
+          "http://#{ip}:#{port}"
+        ]
+      ))
+    end)
 
     DynamicSupervisor.init(strategy: :one_for_one)
   end
