@@ -16,7 +16,7 @@ defmodule ROS.Node do
 
     dispatch =
       :cowboy_router.compile([
-        {:_, [{:_, __MODULE__, [ROS.SlaveApi.from_node_name(name)]}]}
+        {:_, [{:_, __MODULE__, [ROS.SlaveApi.from_node_name(name, [])]}]}
       ])
 
     opts =
@@ -109,15 +109,14 @@ defmodule ROS.Node do
 
     @spec ensure_children_named([{module(), list()}]) :: [{module(), list()}]
     defp ensure_children_named(children) do
-      Enum.map(children, fn {mod, opts} ->
-        new_opts =
-          case Keyword.fetch(opts, :name) do
-            {:ok, _} -> opts
+      Enum.map(children, &name_child/1)
+    end
 
-            :error -> Keyword.put(opts, :name, make_ref())
-          end
-        {mod, opts}
-      end)
+    defp name_child({module, opts}) do
+      node_name = Keyword.fetch!(opts, :node_name)
+      name = Keyword.get(opts, :name, module.from_node_name(node_name, opts))
+
+      {module, Keyword.put(opts, :name, name)}
     end
   end
 end

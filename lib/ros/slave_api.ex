@@ -7,14 +7,14 @@ defmodule ROS.SlaveApi do
 
   @spec start_link(Keyword.t()) :: :ok
   def start_link(opts) do
-    name = Keyword.fetch!(opts, :node_name)
+    name = Keyword.fetch!(opts, :name)
 
-    GenServer.start_link(__MODULE__, opts, name: from_node_name(name))
+    GenServer.start_link(__MODULE__, opts, name: name)
   end
 
   @impl GenServer
   def init(node_info) do
-    IO.inspect({:ok, consume(node_info)})
+    {:ok, consume(node_info)}
   end
 
   @spec call(atom(), String.t(), [any()]) :: [any()]
@@ -25,8 +25,8 @@ defmodule ROS.SlaveApi do
   def master_uri, do: System.get_env("ROS_MASTER_URI")
 
   @doc "Append the node name with \"_api_server\""
-  @spec from_node_name(atom()) :: atom()
-  def from_node_name(name) do
+  @spec from_node_name(atom(), Keyword.t()) :: atom()
+  def from_node_name(name, _opts) do
     String.to_atom(Atom.to_string(name) <> "_api_server")
   end
 

@@ -2,6 +2,10 @@ defmodule ROS.Subscriber do
   use DynamicSupervisor
   require Logger
 
+  def from_node_name(node_name, opts) do
+    String.to_atom(Atom.to_string(node_name) <> "_" <> opts[:topic])
+  end
+
   def start_link(opts \\ []) do
     name = Keyword.fetch!(opts, :name)
 
