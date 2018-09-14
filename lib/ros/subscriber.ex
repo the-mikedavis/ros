@@ -13,20 +13,42 @@ defmodule ROS.Subscriber do
   end
 
   @impl DynamicSupervisor
-  def init(_opts) do
-    DynamicSupervisor.init(strategy: :one_for_one)
-  end
+  def init(opts) do
+    {ip, port} = opts[:uri]
 
-  def request(node_name, topic, publisher, [["TCPROS"]] = transport) do
+    # TODO: wait until this succeeds
     Logger.debug(fn ->
       inspect(
         Xenium.call!(
-          publisher,
-          "requestTopic",
-          [node_name, topic, transport]
+          ROS.SlaveApi.master_uri(),
+          "registerSubscriber",
+          [
+            Atom.to_string(opts[:node_name]),
+            opts[:topic],
+            opts[:type],
+            "http://#{ip}:#{port}"
+          ]
         )
       )
     end)
+
+    DynamicSupervisor.init(strategy: :one_for_one)
+  end
+
+  @spec request(Keyword.t(), atom(), String.t(), String.t(), [[String.t()]]) :: :ok
+  def request(sub, node_name, topic, publisher, [["TCPROS"]] = transport) do
+    response =
+      Xenium.call!(
+        publisher,
+        "requestTopic",
+        [Atom.to_string(node_name), topic, transport]
+      )
+
+    [1, _, ["TCPROS", ip, port]] = response
+
+    Logger.debug(fn -> inspect(response) end)
+
+    connect(sub[:name], sub[:callback], ip, port, "TCPROS")
   end
 
   @spec connect(
@@ -41,6 +63,6 @@ defmodule ROS.Subscriber do
 
     {:ok, pid} = DynamicSupervisor.start_child(subscriber, spec)
 
-    GenServer.call(pid, {:connect, ip, port})
+    GenServer.cast(pid, {:connect, ip, port})
   end
 end

@@ -36,6 +36,7 @@ defmodule ROS.Node do
     |> start_server(opts)
     |> inform_children(name, children)
     |> ensure_children_named()
+    |> children_meet_children()
     |> Supervisor.init(strategy: :one_for_one)
   end
 
@@ -60,12 +61,17 @@ defmodule ROS.Node do
       {local_ip(), :ranch.get_port(name)}
     end
 
-    @spec inform_children({String.t(), pos_integer()}, atom(), [
-            {module(), Keyword.t()}
-          ]) :: [{module(), Keyword.t()}]
+    @spec inform_children({String.t(), pos_integer()}, atom(), {module(), Keyword.t()}) :: [{module(), Keyword.t()}]
     defp inform_children(uri, name, children) do
       for {module, opts} <- children do
-        {module, [uri: uri, node_name: name, children: children] ++ opts}
+        {module, [uri: uri, node_name: name] ++ opts}
+      end
+    end
+
+    @spec children_meet_children({module(), Keyword.t()}) :: {module(), Keyword.t()}
+    defp children_meet_children(children) do
+      for {module, opts} <- children do
+        {module, [children: children] ++ opts}
       end
     end
 

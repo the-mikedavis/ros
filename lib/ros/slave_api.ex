@@ -36,16 +36,15 @@ defmodule ROS.SlaveApi do
   end
 
   def handle_call({"publisherUpdate", ["/master", topic, publisher_list]}, _from, %{node_name: node_name, local_subs: all_subs} = state) do
-    state = put_in(state[:remote_publishers], topic, publisher_list)
+    state = put_in(state[:remote_publishers], %{topic => publisher_list})
 
     case Map.fetch(all_subs, topic) do
       :error ->
-        {:reply, [1, "go fish. i don't have those subs.", 1], state}
+        {:reply, [1, "go fish. i don't have that sub.", 1], state}
 
-      {:ok, _sub} ->
-        # for sub <- sub_names, pub <- publisher_list do
+      {:ok, sub} ->
         for pub <- publisher_list do
-          ROS.Subscriber.request(node_name, topic, pub, [["TCPROS"]])
+          ROS.Subscriber.request(sub, node_name, topic, pub, [["TCPROS"]])
         end
     end
 
