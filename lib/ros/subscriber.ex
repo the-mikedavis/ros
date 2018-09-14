@@ -48,20 +48,19 @@ defmodule ROS.Subscriber do
 
     Logger.debug(fn -> inspect(response) end)
 
-    connect(sub[:name], sub[:callback], ip, port, "TCPROS")
+    connect(sub, ip, port, "TCPROS")
   end
 
   @spec connect(
-          atom() | pid(),
-          (struct() -> any()),
+          Keyword.t(),
           String.t(),
           pos_integer(),
           String.t()
         ) :: :ok
-  def connect(subscriber, callback, ip, port, "TCPROS") do
-    spec = {ROS.TCP, %{callback: callback}}
+  def connect(subscriber, ip, port, "TCPROS") do
+    spec = {ROS.TCP, %{sub: subscriber}}
 
-    {:ok, pid} = DynamicSupervisor.start_child(subscriber, spec)
+    {:ok, pid} = DynamicSupervisor.start_child(subscriber[:name], spec)
 
     GenServer.cast(pid, {:connect, ip, port})
   end

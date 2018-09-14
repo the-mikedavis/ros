@@ -2,6 +2,8 @@ defmodule ROS.TCP do
   use GenServer
   require Logger
 
+  alias ROS.Message.ConnectionHeader, as: ConnHead
+
   def start_link(args) do
     GenServer.start_link(__MODULE__, args)
   end
@@ -24,7 +26,7 @@ defmodule ROS.TCP do
   end
 
   @impl GenServer
-  def handle_cast({:connect, ip, port}, state) do
+  def handle_cast({:connect, ip, port}, %{sub: sub} = state) do
     ip_addr =
       ip
       |> String.split(".")
@@ -34,6 +36,14 @@ defmodule ROS.TCP do
     {:ok, socket} = :gen_tcp.connect(ip_addr, port, [:binary, packet: 0])
 
     :ok = :gen_tcp.controlling_process(socket, self())
+
+    ConnHead.serialize(
+      %ConnHead{
+        callerid: sub[:node_name],
+        topic: sub[:topic],
+        type: sub[:type]
+      }
+    )
 
     data =
       <<178, 0, 0, 0, 37, 0, 0, 0, 99, 97, 108, 108, 101, 114, 105, 100, 61, 47, 108,
@@ -67,8 +77,8 @@ defmodule ROS.TCP do
 
   @impl GenServer
   # for subscribers, send the connection header and then get data
-  def handle_info({:tcp, _socket, packet}, %{callback: callback} = state) do
-    callback.(packet)
+  def handle_info({:tcp, _socket, packet}, %{sub: sub} = state) do
+    sub[:callback].(packet)
 
     {:noreply, state}
   end
@@ -76,8 +86,8 @@ defmodule ROS.TCP do
   # for publishers, parse the connection header
   def handle_info({:tcp, _socket, packet}, state) do
     packet
-    |> ROS.Message.parse()
-    |> IO.inspect(label: "incoming message", limit: :infinity)
+    |> ROS.Message.ConnectionHeader.parse()
+    |> IO.inspect(label: "incoming connection header", limit: :infinity)
 
     {:noreply, state}
   end
