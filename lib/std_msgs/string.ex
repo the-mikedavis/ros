@@ -1,4 +1,6 @@
 defmodule StdMsgs.String do
+  @behaviour ROS.Message.Behaviour
+
   @moduledoc """
   The String type of std_msgs.
 
@@ -13,9 +15,9 @@ defmodule StdMsgs.String do
 
   defstruct [data: ""]
 
-  @spec md5sum() :: String.t()
+  @impl ROS.Message.Behaviour
   def md5sum, do: "992ce8a1687cec8c8bd883ec73ca41d1"
 
-  @spec definition() :: String.t()
+  @impl ROS.Message.Behaviour
   def definition, do: "string data\n"
 end
