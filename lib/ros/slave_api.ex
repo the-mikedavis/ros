@@ -1,8 +1,10 @@
 defmodule ROS.SlaveApi do
   use GenServer
+  use Private
 
-  @default_state %{publishers: %{}}
+  @default_state %{remote_publishers: %{}}
 
+  @spec start_link(Keyword.t()) :: :ok
   def start_link(opts) do
     name = Keyword.fetch!(opts, :node_name)
 
@@ -11,7 +13,7 @@ defmodule ROS.SlaveApi do
 
   @impl GenServer
   def init(node_info) do
-    {:ok, Enum.into(node_info, @default_state)}
+    {:ok, consume(node_info)}
   end
 
   @spec call(atom(), String.t(), [any()]) :: [any()]
@@ -37,24 +39,44 @@ defmodule ROS.SlaveApi do
         _from,
         state
       ) do
-    state = put_in(state[:publishers], topic, publisher_list)
+    state = put_in(state[:remote_publishers], topic, publisher_list)
 
     {:reply, [1, "publisher list for #{topic} updated.", 0], state}
   end
 
   def handle_call(
-        {"requestTopic", [_caller_id, _topic, [["TCPROS"]]]},
+        {"requestTopic", [caller_id, topic, [["TCPROS"]]]},
         _from,
-        %{uri: {ip, port}} = state
+        %{node_name: node_name, local_publishers: pubs, uri: {ip, _}} = state
       ) do
-    # TODO:
-    # find the `publisher` in `state`
-    # ROS.Publisher.connect(publisher, caller_id, topic, "TCPROS")
+    port =
+      pubs
+      |> Enum.find_value(fn {pub_topic, opts} -> pub_topic == topic && opts[:name] end)
+      |> ROS.Publisher.connect("TCPROS")
+
     {:reply,
-     [1, "ready on {ip}:{port_number}", ["TCPROS", "ip", "port_number"]], state}
+     [1, "ready on http://#{ip}:#{port}", ["TCPROS", ip, port]], state}
   end
 
   def handle_call({fun, _params}, _from, state) do
     {:relply, [-1, "method not found", fun], state}
+  end
+
+  private do
+    @spec consume(Keyword.t()) :: %{}
+    defp consume(opts) do
+      {children, opts} = Keyword.pop(opts, :children, [])
+      opts_map = Enum.into(opts, @default_state)
+
+      children
+      |> Enum.reduce(%{}, fn
+        {ROS.Publisher, pub_opts}, acc ->
+          put_in(acc[:local_publishers], %{pub_opts[:topic] => pub_opts})
+
+        _, acc ->
+          acc
+      end)
+      |> Map.merge(opts_map)
+    end
   end
 end

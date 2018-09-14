@@ -38,13 +38,22 @@ defmodule ROS.Publisher do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  def connect(publisher, caller_id, topic, "ROSTCP") do
-    spec = {ROS.TCP, name: caller_id, topic: topic}
+  @spec connect(atom() | pid(), String.t()) :: pos_integer()
+  def connect(publisher, "TCPROS") do
+    #{:ok, port} =
+    #:gen_tcp.listen(0, [:binary, reuseaddr: true, active: true, packet: 0])
 
-    DynamicSupervisor.start_child(publisher, spec)
+      #{:ok, port_number} = :inet.port(port)
+
+    spec = {ROS.TCP, []}
+
+    {:ok, pid} = DynamicSupervisor.start_child(publisher, spec)
+
+    GenServer.call(pid, :spawn)
   end
 
   def send(publisher, message) do
+    # Broadcast the message to all open connections
     publisher
     |> DynamicSupervisor.which_children()
     |> Enum.map(fn {_, pid, _type, _module} ->

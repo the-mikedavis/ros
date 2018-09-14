@@ -64,7 +64,7 @@ defmodule ROS.Node do
           ]) :: [{module(), Keyword.t()}]
     defp inform_children(uri, name, children) do
       for {module, opts} <- children do
-        {module, [uri: uri, node_name: name] ++ opts}
+        {module, [uri: uri, node_name: name, children: children] ++ opts}
       end
     end
 
