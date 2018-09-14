@@ -19,7 +19,7 @@ defmodule StdMsgs.Header do
     frame_id: String.t()
   }
 
-  defstruct [seq: nil, stamp: Time.now(), frame_id: ""]
+  defstruct [seq: nil, stamp: Time.utc_now(), frame_id: ""]
 
   @impl ROS.Message.Behaviour
   def md5sum, do: "2176decaecbce78abc3b96ef049fabed"

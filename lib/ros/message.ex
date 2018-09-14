@@ -68,7 +68,7 @@ defmodule ROS.Message do
   def parse_as(binary, _type_module) do
     binary
     |> split()
-    |> Enum.map(&split/1)
+    #|> Enum.map(&split/1)
   end
 
   private do
