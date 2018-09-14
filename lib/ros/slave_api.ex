@@ -2,6 +2,7 @@ defmodule ROS.SlaveApi do
   use GenServer
   use Private
 
+  # unclear as of yet if this is useful... doubtful
   @default_state %{remote_publishers: %{}}
 
   @spec start_link(Keyword.t()) :: :ok
@@ -13,7 +14,7 @@ defmodule ROS.SlaveApi do
 
   @impl GenServer
   def init(node_info) do
-    {:ok, consume(node_info)}
+    IO.inspect({:ok, consume(node_info)})
   end
 
   @spec call(atom(), String.t(), [any()]) :: [any()]
@@ -34,12 +35,21 @@ defmodule ROS.SlaveApi do
     {:reply, [1, "ROS Master Uri", master_uri()], state}
   end
 
-  def handle_call(
-        {"publisherUpdate", ["/master", topic, publisher_list]},
-        _from,
-        state
-      ) do
+  def handle_call({"publisherUpdate", ["/master", topic, publisher_list]}, _from, %{node_name: node_name, local_subs: all_subs} = state) do
     state = put_in(state[:remote_publishers], topic, publisher_list)
+
+    case Map.fetch(all_subs, topic) do
+      :error ->
+        {:reply, [1, "go fish. i don't have those subs.", 1], state}
+
+      {:ok, _subs} ->
+        #sub_names = Enum.map(subs, &Keyword.get(&1, :name))
+
+        # for sub <- sub_names, pub <- publisher_list do
+        for pub <- publisher_list do
+          ROS.Subscriber.request(node_name, topic, pub, [["TCPROS"]])
+        end
+    end
 
     {:reply, [1, "publisher list for #{topic} updated.", 0], state}
   end
@@ -70,17 +80,30 @@ defmodule ROS.SlaveApi do
       opts_map = Enum.into(opts, @default_state)
 
       children
-      |> Enum.reduce(%{}, fn
-        {ROS.Publisher, pub_opts}, acc ->
-          put_in(acc[:local_pubs], %{pub_opts[:topic] => pub_opts})
-
-        {ROS.Subscriber, sub_opts}, acc ->
-          put_in(acc[:local_subs], %{sub_opts[:topic] => sub_opts})
-
-        _, acc ->
-          acc
-      end)
+      |> Enum.reduce(%{}, &add_to_map/2)
       |> Map.merge(opts_map)
+    end
+
+    defp add_to_map({ROS.Publisher, opts}, acc) do
+      put_in(acc[:local_pubs], %{opts[:topic] => opts})
+    end
+    defp add_to_map({ROS.Subscriber, opts}, acc) do
+      new_sub_list =
+        case Map.fetch(acc[:local_subs], opts[:topic]) do
+          {:ok, sub_list} when is_list(sub_list) -> [opts | sub_list]
+
+          :error -> [opts]
+        end
+
+      Map.put(acc, opts[:topic], new_sub_list)
+    end
+    defp add_to_map(_, acc), do: acc
+
+    @spec translate_publisher(String.t()) :: {{integer(), integer(), integer(), integer()}, integer()}
+    defp translate_publisher("http://" <> rest) do
+      {ip_txt, port_txt} = String.split(rest, ":")
+
+      {List.to_tuple(String.split(ip_txt)), String.to_integer(port_txt)}
     end
   end
 end

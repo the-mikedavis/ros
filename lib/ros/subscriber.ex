@@ -9,26 +9,20 @@ defmodule ROS.Subscriber do
   end
 
   @impl DynamicSupervisor
-  def init(opts) do
-    {ip, port} = opts[:uri]
+  def init(_opts) do
+    DynamicSupervisor.init(strategy: :one_for_one)
+  end
 
-    # TODO: wait until this succeeds
+  def request(node_name, topic, publisher, [["TCPROS"]] = transport) do
     Logger.debug(fn ->
       inspect(
         Xenium.call!(
-          ROS.SlaveApi.master_uri(),
-          "registerPublisher",
-          [
-            Atom.to_string(opts[:node_name]),
-            opts[:topic],
-            opts[:type],
-            "http://#{ip}:#{port}"
-          ]
+          publisher,
+          "requestTopic",
+          [node_name, topic, transport]
         )
       )
     end)
-
-    DynamicSupervisor.init(strategy: :one_for_one)
   end
 
   @spec connect(

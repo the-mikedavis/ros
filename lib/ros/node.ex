@@ -35,6 +35,7 @@ defmodule ROS.Node do
     |> comm_server_name()
     |> start_server(opts)
     |> inform_children(name, children)
+    |> ensure_children_named()
     |> Supervisor.init(strategy: :one_for_one)
   end
 
@@ -95,7 +96,7 @@ defmodule ROS.Node do
     end
 
     @spec local_ip() :: String.t()
-    def local_ip do
+    defp local_ip do
       {:ok, ips} = :inet.getif()
 
       ips
@@ -104,6 +105,16 @@ defmodule ROS.Node do
       |> Enum.map(&Tuple.to_list/1)
       |> Enum.map(&Enum.join(&1, "."))
       |> List.first()
+    end
+
+    defp ensure_children_named(children) do
+      Enum.map(children, fn child ->
+        case Keyword.fetch(child, :name) do
+          {:ok, _} -> child
+
+          :error -> Keyword.put(child, :name, make_ref())
+        end
+      end)
     end
   end
 end
