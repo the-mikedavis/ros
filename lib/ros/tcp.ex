@@ -78,7 +78,9 @@ defmodule ROS.TCP do
   @impl GenServer
   # for subscribers, send the connection header and then get data
   def handle_info({:tcp, _socket, packet}, %{sub: sub} = state) do
-    sub[:callback].(packet)
+    packet
+    |> ROS.Message.parse_as(sub[:type])
+    |> sub[:callback].()
 
     {:noreply, state}
   end

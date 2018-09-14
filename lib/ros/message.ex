@@ -39,4 +39,11 @@ defmodule ROS.Message do
 
     [field | split(rest)]
   end
+
+  def parse_as(binary, _type_module) do
+    binary
+    |> split()
+    |> List.first()
+    |> split()
+  end
 end
