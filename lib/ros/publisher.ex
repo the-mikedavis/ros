@@ -23,16 +23,18 @@ defmodule ROS.Publisher do
 
     # TODO: wait until this succeeds
     Logger.debug(fn ->
-      inspect(Xenium.call!(
-        ROS.SlaveApi.master_uri(),
-        "registerPublisher",
-        [
-          Atom.to_string(opts[:node_name]),
-          opts[:topic],
-          opts[:type],
-          "http://#{ip}:#{port}"
-        ]
-      ))
+      inspect(
+        Xenium.call!(
+          ROS.SlaveApi.master_uri(),
+          "registerPublisher",
+          [
+            Atom.to_string(opts[:node_name]),
+            opts[:topic],
+            opts[:type],
+            "http://#{ip}:#{port}"
+          ]
+        )
+      )
     end)
 
     DynamicSupervisor.init(strategy: :one_for_one)
@@ -40,16 +42,11 @@ defmodule ROS.Publisher do
 
   @spec connect(atom() | pid(), String.t()) :: pos_integer()
   def connect(publisher, "TCPROS") do
-    #{:ok, port} =
-    #:gen_tcp.listen(0, [:binary, reuseaddr: true, active: true, packet: 0])
-
-      #{:ok, port_number} = :inet.port(port)
-
     spec = {ROS.TCP, []}
 
     {:ok, pid} = DynamicSupervisor.start_child(publisher, spec)
 
-    GenServer.call(pid, :spawn)
+    GenServer.call(pid, :accept)
   end
 
   def send(publisher, message) do

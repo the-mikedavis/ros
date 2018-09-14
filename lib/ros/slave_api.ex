@@ -45,17 +45,18 @@ defmodule ROS.SlaveApi do
   end
 
   def handle_call(
-        {"requestTopic", [caller_id, topic, [["TCPROS"]]]},
+        {"requestTopic", [_caller_id, topic, [["TCPROS"]]]},
         _from,
-        %{node_name: node_name, local_publishers: pubs, uri: {ip, _}} = state
+        %{local_pubs: pubs, uri: {ip, _}} = state
       ) do
     port =
       pubs
-      |> Enum.find_value(fn {pub_topic, opts} -> pub_topic == topic && opts[:name] end)
+      |> Enum.find_value(fn {pub_topic, opts} ->
+        pub_topic == topic && opts[:name]
+      end)
       |> ROS.Publisher.connect("TCPROS")
 
-    {:reply,
-     [1, "ready on http://#{ip}:#{port}", ["TCPROS", ip, port]], state}
+    {:reply, [1, "ready on http://#{ip}:#{port}", ["TCPROS", ip, port]], state}
   end
 
   def handle_call({fun, _params}, _from, state) do
@@ -71,7 +72,10 @@ defmodule ROS.SlaveApi do
       children
       |> Enum.reduce(%{}, fn
         {ROS.Publisher, pub_opts}, acc ->
-          put_in(acc[:local_publishers], %{pub_opts[:topic] => pub_opts})
+          put_in(acc[:local_pubs], %{pub_opts[:topic] => pub_opts})
+
+        {ROS.Subscriber, sub_opts}, acc ->
+          put_in(acc[:local_subs], %{sub_opts[:topic] => sub_opts})
 
         _, acc ->
           acc
