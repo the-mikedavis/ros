@@ -64,6 +64,7 @@ defmodule ROS.Message do
   def module(mod) when is_atom(mod), do: mod
   def module(type) when is_binary(type), do: type_to_module(type)
 
+  # TODO: parse into struct
   def parse_as(binary, _type_module) do
     binary
     |> split()

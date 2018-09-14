@@ -120,7 +120,7 @@ defmodule ROS.Node do
 
     defp name_child({module, opts}) do
       node_name = Keyword.fetch!(opts, :node_name)
-      name = Keyword.get(opts, :name, module.from_node_name(node_name, opts))
+      name = Keyword.get_lazy(opts, :name, fn -> module.from_node_name(node_name, opts) end)
 
       {module, Keyword.put(opts, :name, name)}
     end

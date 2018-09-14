@@ -37,20 +37,19 @@ defmodule ROS.TCP do
 
     :ok = :gen_tcp.controlling_process(socket, self())
 
-    data =
-      sub
-      |> ConnHead.from_subscriber()
-      |> IO.inspect(label: "conn_head from subscriber")
-      |> ConnHead.serialize()
-      |> IO.inspect(label: "serialized conn_head", limit: :infinity)
+    data = build_conn_header(sub)
 
     GenServer.cast(self(), {:send, data})
 
     {:noreply, Map.put(state, :socket, socket)}
   end
 
-  def handle_cast({:accept, port}, state) do
+  def handle_cast({:accept, port}, %{pub: pub} = state) do
     {:ok, socket} = :gen_tcp.accept(port)
+
+    data = build_conn_header(pub)
+
+    GenServer.cast(self(), {:send, data})
 
     {:noreply, Map.put(state, :socket, socket)}
   end
@@ -84,5 +83,13 @@ defmodule ROS.TCP do
     Logger.warn("TCP connection closed")
 
     {:noreply, state}
+  end
+
+  defp build_conn_header(psub) do
+    psub
+    |> ConnHead.from()
+    |> IO.inspect(label: "conn_head for #{psub[:name]}")
+    |> ConnHead.serialize()
+    |> IO.inspect(label: "serialized conn_head", limit: :infinity)
   end
 end

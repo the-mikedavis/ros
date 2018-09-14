@@ -65,14 +65,16 @@ defmodule ROS.Message.ConnectionHeader do
     serialize(%__MODULE__{conn_header | type: ROS.Message.type(type)})
   end
 
-  @doc "Generate a connection header from a subscriber keyword list."
-  @spec from_subscriber(Keyword.t()) :: %__MODULE__{}
-  def from_subscriber(sub) do
-    type = ROS.Message.module(sub[:type])
+  @doc """
+  Generate a connection header from a subscriber or publisher keyword list.
+  """
+  @spec from(Keyword.t()) :: %__MODULE__{}
+  def from(psub) do
+    type = ROS.Message.module(psub[:type])
 
     %__MODULE__{
-      callerid: Atom.to_string(sub[:node_name]),
-      topic: sub[:topic],
+      callerid: Atom.to_string(psub[:node_name]),
+      topic: psub[:topic],
       type: type,
       md5sum: type.md5sum(),
       message_definition: type.definition()

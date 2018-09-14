@@ -59,7 +59,7 @@ defmodule ROS.SlaveApi do
     port =
       pubs
       |> Enum.find_value(fn {pub_topic, opts} ->
-        pub_topic == topic && opts[:name]
+        pub_topic == topic && opts
       end)
       |> ROS.Publisher.connect("TCPROS")
 

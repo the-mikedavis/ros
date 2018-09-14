@@ -40,16 +40,16 @@ defmodule ROS.Publisher do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  @spec connect(atom() | pid(), String.t()) :: pos_integer()
+  @spec connect(Keyword.t(), String.t()) :: :ok
   def connect(publisher, "TCPROS") do
-    spec = {ROS.TCP, []}
+    spec = {ROS.TCP, %{pub: publisher}}
 
-    {:ok, pid} = DynamicSupervisor.start_child(publisher, spec)
+    {:ok, pid} = DynamicSupervisor.start_child(publisher[:name], spec)
 
     GenServer.call(pid, :accept)
   end
 
-  def send(publisher, message) do
+  def publish(publisher, message) do
     # Broadcast the message to all open connections
     publisher
     |> DynamicSupervisor.which_children()
