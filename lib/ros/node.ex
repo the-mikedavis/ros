@@ -107,13 +107,16 @@ defmodule ROS.Node do
       |> List.first()
     end
 
+    @spec ensure_children_named([{module(), list()}]) :: [{module(), list()}]
     defp ensure_children_named(children) do
-      Enum.map(children, fn child ->
-        case Keyword.fetch(child, :name) do
-          {:ok, _} -> child
+      Enum.map(children, fn {mod, opts} ->
+        new_opts =
+          case Keyword.fetch(opts, :name) do
+            {:ok, _} -> opts
 
-          :error -> Keyword.put(child, :name, make_ref())
-        end
+            :error -> Keyword.put(opts, :name, make_ref())
+          end
+        {mod, opts}
       end)
     end
   end

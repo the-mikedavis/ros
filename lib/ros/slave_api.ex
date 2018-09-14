@@ -42,9 +42,7 @@ defmodule ROS.SlaveApi do
       :error ->
         {:reply, [1, "go fish. i don't have those subs.", 1], state}
 
-      {:ok, _subs} ->
-        #sub_names = Enum.map(subs, &Keyword.get(&1, :name))
-
+      {:ok, _sub} ->
         # for sub <- sub_names, pub <- publisher_list do
         for pub <- publisher_list do
           ROS.Subscriber.request(node_name, topic, pub, [["TCPROS"]])
@@ -88,14 +86,7 @@ defmodule ROS.SlaveApi do
       put_in(acc[:local_pubs], %{opts[:topic] => opts})
     end
     defp add_to_map({ROS.Subscriber, opts}, acc) do
-      new_sub_list =
-        case Map.fetch(acc[:local_subs], opts[:topic]) do
-          {:ok, sub_list} when is_list(sub_list) -> [opts | sub_list]
-
-          :error -> [opts]
-        end
-
-      Map.put(acc, opts[:topic], new_sub_list)
+      put_in(acc[:local_subs], %{opts[:topic] => opts})
     end
     defp add_to_map(_, acc), do: acc
 
