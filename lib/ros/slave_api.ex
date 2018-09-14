@@ -88,12 +88,5 @@ defmodule ROS.SlaveApi do
       put_in(acc[:local_subs], %{opts[:topic] => opts})
     end
     defp add_to_map(_, acc), do: acc
-
-    @spec translate_publisher(String.t()) :: {{integer(), integer(), integer(), integer()}, integer()}
-    defp translate_publisher("http://" <> rest) do
-      {ip_txt, port_txt} = String.split(rest, ":")
-
-      {List.to_tuple(String.split(ip_txt)), String.to_integer(port_txt)}
-    end
   end
 end

@@ -11,7 +11,7 @@ defmodule ROS.Message.ConnectionHeader do
           topic: String.t(),
           service: String.t(),
           md5sum: String.t(),
-          type: struct(),
+          type: String.t() | struct(),
           message_definition: String.t(),
           error: String.t(),
           persistent: boolean(),
@@ -50,8 +50,29 @@ defmodule ROS.Message.ConnectionHeader do
     |> into()
   end
 
-  def serialize(%__MODULE__{} = _conn_header) do
-    # TODO
+  def serialize(%__MODULE__{type: type} = conn_header) when is_binary(type) do
+    packet =
+      conn_header
+      |> Map.from_struct()
+      |> Enum.map(&serialize_field/1)
+      |> Enum.map(fn field -> field_length_binary(field) <> field end)
+      |> Enum.reduce(&<>/2)
+
+    field_length_binary(packet) <> packet
+  end
+
+  @doc "Generate a connection header from a subscriber keyword list."
+  @spec from_subscriber(Keyword.t()) :: %__MODULE__{}
+  def from_subscriber(sub) do
+    type = ROS.Message.module(sub[:type])
+
+    %__MODULE__{
+      callerid: sub[:node_name],
+      topic: sub[:topic],
+      type: type,
+      md5sum: type.md5sum(),
+      message_definition: type.definition()
+    }
   end
 
   private do
@@ -65,6 +86,25 @@ defmodule ROS.Message.ConnectionHeader do
       [lhs, rhs] = String.split(field, "=")
 
       {String.to_atom(lhs), rhs}
+    end
+
+    defp serialize_field({key, true}) when key in [:tcp_nodelay, :persistent, :latching] do
+      Atom.to_string(key) <> "=" <> "1"
+    end
+    defp serialize_field({key, false}) when key in [:tcp_nodelay, :persistent, :latching] do
+      Atom.to_string(key) <> "=" <> "0"
+    end
+    defp serialize_field({key, value}) do
+      Atom.to_string(key) <> "=" <> value
+    end
+
+    @spec field_length_binary(binary()) :: binary()
+    defp field_length_binary(field) do
+      field
+      |> String.length()
+      |> Bite.from_integer()
+      |> Bite.pad_length(4)
+      |> Bite.reverse()
     end
   end
 end
