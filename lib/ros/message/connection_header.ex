@@ -54,11 +54,15 @@ defmodule ROS.Message.ConnectionHeader do
     packet =
       conn_header
       |> Map.from_struct()
+      |> Enum.reject(fn {_key, val} -> is_nil(val) end)
       |> Enum.map(&serialize_field/1)
       |> Enum.map(fn field -> field_length_binary(field) <> field end)
       |> Enum.reduce(&<>/2)
 
     field_length_binary(packet) <> packet
+  end
+  def serialize(%__MODULE__{type: type} = conn_header) when is_atom(type) do
+    serialize(%__MODULE__{conn_header | type: ROS.Message.type(type)})
   end
 
   @doc "Generate a connection header from a subscriber keyword list."
@@ -67,7 +71,7 @@ defmodule ROS.Message.ConnectionHeader do
     type = ROS.Message.module(sub[:type])
 
     %__MODULE__{
-      callerid: sub[:node_name],
+      callerid: Atom.to_string(sub[:node_name]),
       topic: sub[:topic],
       type: type,
       md5sum: type.md5sum(),

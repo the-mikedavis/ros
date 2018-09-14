@@ -16,6 +16,6 @@ defmodule StdMsgs.String do
   @spec md5sum() :: String.t()
   def md5sum, do: "992ce8a1687cec8c8bd883ec73ca41d1"
 
-  @spec description() :: String.t()
-  def description, do: "string data\n"
+  @spec definition() :: String.t()
+  def definition, do: "string data\n"
 end
