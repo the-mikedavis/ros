@@ -12,10 +12,10 @@ defmodule StdMsgs.Int16 do
   """
 
   @type t :: %__MODULE__{
-    data: integer()
-  }
+          data: integer()
+        }
 
-  defstruct [data: 0]
+  defstruct data: 0
 
   @impl ROS.Message.Behaviour
   def md5sum, do: "8524586e34fbd7cb1c08c5f5f1ca0e57"

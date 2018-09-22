@@ -12,10 +12,10 @@ defmodule StdMsgs.Float32 do
   """
 
   @type t :: %__MODULE__{
-    data: integer()
-  }
+          data: integer()
+        }
 
-  defstruct [data: 0.0]
+  defstruct data: 0.0
 
   @impl ROS.Message.Behaviour
   def md5sum, do: "73fcbf46b49191e672908e50842a83d4"

@@ -89,6 +89,7 @@ defmodule ROS.Message do
   def deserialize(binary, type_module) when is_binary(type_module) do
     deserialize(binary, type_to_module(type_module))
   end
+
   def deserialize(binary, type_module) do
     {innards, _rest} = split_once(binary)
 
@@ -111,7 +112,6 @@ defmodule ROS.Message do
     type.types()
     |> Enum.reduce(<<>>, fn
       {name, :string}, acc -> acc <> pack_string(Map.get(data, name))
-
       {name, type}, acc -> acc <> Satchel.pack(Map.get(data, name), type)
     end)
     |> pack_string()
@@ -120,7 +120,7 @@ defmodule ROS.Message do
   private do
     # turn 168 -> <<168, 0, 0, 0>>
     @spec length_field(non_neg_integer()) :: binary()
-    defp length_field(len), do: <<len :: little-integer-32>>
+    defp length_field(len), do: <<len::little-integer-32>>
 
     @spec pack_string(binary()) :: binary()
     defp pack_string(str) do
@@ -158,11 +158,13 @@ defmodule ROS.Message do
     @spec _parse(binary(), [{atom(), atom()}], [any()]) :: [any()]
     def _parse(<<>>, _types, acc), do: acc
     def _parse(_binary, [], acc), do: acc
+
     def _parse(binary, [{name, :string} | other_types], acc) do
       {str, rest} = split_once(binary)
 
       _parse(rest, other_types, [{name, str} | acc])
     end
+
     def _parse(binary, [{name, type} | other_types], acc) do
       {value, rest} = Satchel.unpack_take(binary, type)
 

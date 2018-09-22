@@ -61,14 +61,19 @@ defmodule ROS.Node do
       {local_ip(), :ranch.get_port(name)}
     end
 
-    @spec inform_children({String.t(), pos_integer()}, atom(), {module(), Keyword.t()}) :: [{module(), Keyword.t()}]
+    @spec inform_children(
+            {String.t(), pos_integer()},
+            atom(),
+            {module(), Keyword.t()}
+          ) :: [{module(), Keyword.t()}]
     defp inform_children(uri, name, children) do
       for {module, opts} <- children do
         {module, [uri: uri, node_name: name] ++ opts}
       end
     end
 
-    @spec children_meet_children({module(), Keyword.t()}) :: {module(), Keyword.t()}
+    @spec children_meet_children({module(), Keyword.t()}) ::
+            {module(), Keyword.t()}
     defp children_meet_children(children) do
       for {module, opts} <- children do
         {module, [children: children] ++ opts}
@@ -120,7 +125,11 @@ defmodule ROS.Node do
 
     defp name_child({module, opts}) do
       node_name = Keyword.fetch!(opts, :node_name)
-      name = Keyword.get_lazy(opts, :name, fn -> module.from_node_name(node_name, opts) end)
+
+      name =
+        Keyword.get_lazy(opts, :name, fn ->
+          module.from_node_name(node_name, opts)
+        end)
 
       {module, Keyword.put(opts, :name, name)}
     end

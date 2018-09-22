@@ -13,7 +13,7 @@ defmodule StdMsgs.String do
 
   @type t :: %__MODULE__{data: String.t()}
 
-  defstruct [data: ""]
+  defstruct data: ""
 
   @impl ROS.Message.Behaviour
   def md5sum, do: "992ce8a1687cec8c8bd883ec73ca41d1"

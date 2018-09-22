@@ -35,7 +35,8 @@ defmodule ROS.Subscriber do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  @spec request(Keyword.t(), atom(), String.t(), String.t(), [[String.t()]]) :: :ok
+  @spec request(Keyword.t(), atom(), String.t(), String.t(), [[String.t()]]) ::
+          :ok
   def request(sub, node_name, topic, publisher, [["TCPROS"]] = transport) do
     response =
       Xenium.call!(

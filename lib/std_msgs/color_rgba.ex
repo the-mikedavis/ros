@@ -15,13 +15,13 @@ defmodule StdMsgs.ColorRGBA do
   """
 
   @type t :: %__MODULE__{
-    r: float(),
-    g: float(),
-    b: float(),
-    a: float()
-  }
+          r: float(),
+          g: float(),
+          b: float(),
+          a: float()
+        }
 
-  defstruct [r: 0.0, g: 0.0, b: 0.0, a: 0.0]
+  defstruct r: 0.0, g: 0.0, b: 0.0, a: 0.0
 
   @impl ROS.Message.Behaviour
   def md5sum, do: "a29a96539573343b1310c73607334b00"

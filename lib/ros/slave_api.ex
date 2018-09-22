@@ -35,7 +35,11 @@ defmodule ROS.SlaveApi do
     {:reply, [1, "ROS Master Uri", master_uri()], state}
   end
 
-  def handle_call({"publisherUpdate", ["/master", topic, publisher_list]}, _from, %{node_name: node_name, local_subs: all_subs} = state) do
+  def handle_call(
+        {"publisherUpdate", ["/master", topic, publisher_list]},
+        _from,
+        %{node_name: node_name, local_subs: all_subs} = state
+      ) do
     state = put_in(state[:remote_publishers], %{topic => publisher_list})
 
     case Map.fetch(all_subs, topic) do
@@ -84,9 +88,11 @@ defmodule ROS.SlaveApi do
     defp add_to_map({ROS.Publisher, opts}, acc) do
       put_in(acc[:local_pubs], %{opts[:topic] => opts})
     end
+
     defp add_to_map({ROS.Subscriber, opts}, acc) do
       put_in(acc[:local_subs], %{opts[:topic] => opts})
     end
+
     defp add_to_map(_, acc), do: acc
   end
 end

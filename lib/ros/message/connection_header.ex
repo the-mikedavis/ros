@@ -19,18 +19,16 @@ defmodule ROS.Message.ConnectionHeader do
           latching: boolean()
         }
 
-  defstruct [
-    callerid: nil,
-    topic: nil,
-    service: nil,
-    md5sum: nil,
-    type: nil,
-    message_definition: nil,
-    error: nil,
-    persistent: false,
-    tcp_nodelay: false,
-    latching: false
-  ]
+  defstruct callerid: nil,
+            topic: nil,
+            service: nil,
+            md5sum: nil,
+            type: nil,
+            message_definition: nil,
+            error: nil,
+            persistent: false,
+            tcp_nodelay: false,
+            latching: false
 
   def into(fields) do
     map =
@@ -61,6 +59,7 @@ defmodule ROS.Message.ConnectionHeader do
 
     field_length_binary(packet) <> packet
   end
+
   def serialize(%__MODULE__{type: type} = conn_header) when is_atom(type) do
     serialize(%__MODULE__{conn_header | type: ROS.Message.type(type)})
   end
@@ -88,18 +87,23 @@ defmodule ROS.Message.ConnectionHeader do
     defp translate("persistent=1"), do: {:persistent, false}
     defp translate("latching=0"), do: {:latching, false}
     defp translate("latching=1"), do: {:latching, false}
+
     defp translate(field) do
       [lhs, rhs] = String.split(field, "=")
 
       {String.to_atom(lhs), rhs}
     end
 
-    defp serialize_field({key, true}) when key in [:tcp_nodelay, :persistent, :latching] do
+    defp serialize_field({key, true})
+         when key in [:tcp_nodelay, :persistent, :latching] do
       Atom.to_string(key) <> "=" <> "1"
     end
-    defp serialize_field({key, false}) when key in [:tcp_nodelay, :persistent, :latching] do
+
+    defp serialize_field({key, false})
+         when key in [:tcp_nodelay, :persistent, :latching] do
       Atom.to_string(key) <> "=" <> "0"
     end
+
     defp serialize_field({key, value}) do
       Atom.to_string(key) <> "=" <> value
     end
