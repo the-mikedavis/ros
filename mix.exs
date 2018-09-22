@@ -21,29 +21,25 @@ defmodule ROS.MixProject do
     ]
   end
 
-  # Configuration for the OTP application.
-  #
-  # Type `mix help compile.app` for more information.
   def application do
     [
+      # TODO: remove
       mod: {ROS.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
 
-  # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
-  # Specifies your project dependencies.
-  #
-  # Type `mix help deps` for examples and options.
   defp deps do
     [
       {:cowboy, "~> 2.4"},
       {:xenium, git: "https://github.com/the-mikedavis/xenium.git"},
       {:bite, git: "https://github.com/the-mikedavis/bite.git"},
-      # Testing and code cleanliness
+      {:satchel, git: "https://github.com/the-mikedavis/satchel.git"},
+
+      # Testing and code hygiene, etc.
       {:private, "~> 0.1.1"},
       {:excoveralls, "~> 0.7", only: :test},
       {:credo, "~> 0.9", only: :test, runtime: false},
