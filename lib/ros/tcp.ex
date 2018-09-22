@@ -88,8 +88,6 @@ defmodule ROS.TCP do
   defp build_conn_header(psub) do
     psub
     |> ConnHead.from()
-    |> IO.inspect(label: "conn_head for #{psub[:name]}")
     |> ConnHead.serialize()
-    |> IO.inspect(label: "serialized conn_head", limit: :infinity)
   end
 end

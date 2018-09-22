@@ -24,6 +24,16 @@ defmodule ROS.Message do
   def split(<<>>), do: []
 
   def split(binary) do
+    {field, rest} = split_once(binary)
+
+    [field | split(rest)]
+  end
+
+  @doc """
+  Splits a field off once. Used in the recursive implementation of split.
+  """
+  @spec split_once(binary()) :: {binary(), binary()}
+  def split_once(binary) do
     field_length =
       binary
       |> Bite.take(@block_length, 'l')
@@ -37,7 +47,7 @@ defmodule ROS.Message do
 
     rest = Bite.drop(binary, @block_length + field_length)
 
-    [field | split(rest)]
+    {field, rest}
   end
 
   @doc """
@@ -45,7 +55,7 @@ defmodule ROS.Message do
 
   ## Examples
 
-      iex> ROS.Message.module_to_type(StdMsgs.String)
+      iex> ROS.Message.type(StdMsgs.String)
       "std_msgs/String"
   """
   @spec type(String.t() | atom()) :: String.t()
@@ -57,7 +67,7 @@ defmodule ROS.Message do
 
   ## Examples
 
-      iex> ROS.Message.type_to_module("std_msgs/String")
+      iex> ROS.Message.module("std_msgs/String")
       StdMsgs.String
   """
   @spec module(atom() | String.t()) :: atom()
@@ -65,10 +75,17 @@ defmodule ROS.Message do
   def module(type) when is_binary(type), do: type_to_module(type)
 
   # TODO: parse into struct
-  def parse_as(binary, _type_module) do
-    binary
-    |> split()
-    #|> Enum.map(&split/1)
+  def parse_as(binary, type_module) when is_binary(type_module) do
+    parse_as(binary, type_to_module(type_module))
+  end
+  def parse_as(binary, type_module) do
+    parsed_kw_list =
+      binary
+      |> split()
+      |> List.first()
+      |> _parse(type_module.types(), [])
+
+    struct(type_module, parsed_kw_list)
   end
 
   private do
@@ -93,5 +110,21 @@ defmodule ROS.Message do
       |> Enum.join(".")
       |> String.to_atom()
     end
+  end
+
+  # TODO: move into private block
+  # a tail recursive parser
+  @spec _parse(binary(), [{atom(), atom()}], [any()]) :: [any()]
+  def _parse(<<>>, _types, acc), do: acc
+  def _parse(_binary, [], acc), do: acc
+  def _parse(binary, [{name, :string} | other_types], acc) do
+    {str, rest} = split_once(binary)
+
+    _parse(rest, other_types, [{name, str} | acc])
+  end
+  def _parse(binary, [{name, type} | other_types], acc) do
+    {value, rest} = Satchel.unpack_take(binary, type)
+
+    _parse(rest, other_types, [{name, value} | acc])
   end
 end
