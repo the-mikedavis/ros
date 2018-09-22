@@ -36,9 +36,9 @@ defmodule StdMsgs.Header do
   @impl ROS.Message.Behaviour
   def types do
     [
-      :uint32,
-      :time,
-      :string
+      seq: :uint32,
+      stamp: :time,
+      frame_id: :string
     ]
   end
 end

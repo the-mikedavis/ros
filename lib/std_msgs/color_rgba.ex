@@ -39,10 +39,10 @@ defmodule StdMsgs.ColorRGBA do
   @impl ROS.Message.Behaviour
   def types do
     [
-      :float32,
-      :float32,
-      :float32,
-      :float32
+      r: :float32,
+      g: :float32,
+      b: :float32,
+      a: :float32
     ]
   end
 end

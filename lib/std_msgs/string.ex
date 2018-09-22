@@ -24,7 +24,7 @@ defmodule StdMsgs.String do
   @impl ROS.Message.Behaviour
   def types do
     [
-      :string
+      data: :string
     ]
   end
 end

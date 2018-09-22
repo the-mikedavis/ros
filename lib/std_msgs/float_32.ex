@@ -30,7 +30,7 @@ defmodule StdMsgs.Float32 do
   @impl ROS.Message.Behaviour
   def types do
     [
-      :float32
+      data: :float32
     ]
   end
 end

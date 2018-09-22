@@ -30,7 +30,7 @@ defmodule StdMsgs.Int16 do
   @impl ROS.Message.Behaviour
   def types do
     [
-      :int16
+      data: :int16
     ]
   end
 end
