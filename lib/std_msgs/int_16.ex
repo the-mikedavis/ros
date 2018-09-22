@@ -26,4 +26,11 @@ defmodule StdMsgs.Int16 do
     int16 data
     """
   end
+
+  @impl ROS.Message.Behaviour
+  def types do
+    [
+      :int16
+    ]
+  end
 end

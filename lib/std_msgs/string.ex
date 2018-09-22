@@ -20,4 +20,11 @@ defmodule StdMsgs.String do
 
   @impl ROS.Message.Behaviour
   def definition, do: "string data\n"
+
+  @impl ROS.Message.Behaviour
+  def types do
+    [
+      :string
+    ]
+  end
 end

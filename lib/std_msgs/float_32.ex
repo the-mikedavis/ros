@@ -26,4 +26,11 @@ defmodule StdMsgs.Float32 do
     float32 data
     """
   end
+
+  @impl ROS.Message.Behaviour
+  def types do
+    [
+      :float32
+    ]
+  end
 end

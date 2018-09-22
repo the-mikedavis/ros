@@ -32,4 +32,13 @@ defmodule StdMsgs.Header do
     string frame_id
     """
   end
+
+  @impl ROS.Message.Behaviour
+  def types do
+    [
+      :uint32,
+      :time,
+      :string
+    ]
+  end
 end
