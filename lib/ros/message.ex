@@ -74,21 +74,64 @@ defmodule ROS.Message do
   def module(mod) when is_atom(mod), do: mod
   def module(type) when is_binary(type), do: type_to_module(type)
 
-  # TODO: parse into struct
-  def parse_as(binary, type_module) when is_binary(type_module) do
-    parse_as(binary, type_to_module(type_module))
+  @doc """
+  Deserialize a binary message from a publisher into an Elixir struct.
+
+  ## Examples
+
+      iex> data = <<16, 0, 0, 0, 0, 0, 176, 65, 0, 0, 4, 66, 0, 0, 48, 66, 0, 0, 0, 0>>
+      iex> ROS.Message.deserialize(data, "std_msgs/ColorRGBA")
+      %StdMsgs.ColorRGBA{r: 22.0, g: 33.0, b: 44.0, a: 0.0}
+      iex> ROS.Message.deserialize(data, StdMsgs.ColorRGBA)
+      %StdMsgs.ColorRGBA{r: 22.0, g: 33.0, b: 44.0, a: 0.0}
+  """
+  @spec deserialize(binary(), module() | String.t()) :: struct()
+  def deserialize(binary, type_module) when is_binary(type_module) do
+    deserialize(binary, type_to_module(type_module))
   end
-  def parse_as(binary, type_module) do
-    parsed_kw_list =
-      binary
-      |> split()
-      |> List.first()
-      |> _parse(type_module.types(), [])
+  def deserialize(binary, type_module) do
+    {innards, _rest} = split_once(binary)
+
+    parsed_kw_list = _parse(innards, type_module.types(), [])
 
     struct(type_module, parsed_kw_list)
   end
 
+  @doc """
+  Serialize an Elixir struct to a binary transmittable over the wire.
+
+  ## Examples
+
+    iex> data = %StdMsgs.ColorRGBA{r: 22.0, g: 33.0, b: 44.0, a: 0.0}
+    iex> ROS.Message.serialize(data)
+    <<16, 0, 0, 0, 0, 0, 176, 65, 0, 0, 4, 66, 0, 0, 48, 66, 0, 0, 0, 0>>
+  """
+  @spec serialize(struct()) :: binary()
+  def serialize(%type{} = data) do
+    type.types()
+    |> Enum.reduce(<<>>, fn
+      {name, :string}, acc -> acc <> pack_string(Map.get(data, name))
+
+      {name, type}, acc -> acc <> Satchel.pack(Map.get(data, name), type)
+    end)
+    |> pack_string()
+  end
+
   private do
+    # turn 168 -> <<168, 0, 0, 0>>
+    @spec length_field(non_neg_integer()) :: binary()
+    defp length_field(len), do: <<len :: little-integer-32>>
+
+    @spec pack_string(binary()) :: binary()
+    defp pack_string(str) do
+      len_field =
+        str
+        |> String.length()
+        |> length_field
+
+      len_field <> str
+    end
+
     @spec module_to_type(atom()) :: String.t()
     defp module_to_type(mod) when is_atom(mod) do
       [tail | rest] =
@@ -110,21 +153,20 @@ defmodule ROS.Message do
       |> Enum.join(".")
       |> String.to_atom()
     end
-  end
 
-  # TODO: move into private block
-  # a tail recursive parser
-  @spec _parse(binary(), [{atom(), atom()}], [any()]) :: [any()]
-  def _parse(<<>>, _types, acc), do: acc
-  def _parse(_binary, [], acc), do: acc
-  def _parse(binary, [{name, :string} | other_types], acc) do
-    {str, rest} = split_once(binary)
+    # a tail recursive parser used by `deserialize/2`
+    @spec _parse(binary(), [{atom(), atom()}], [any()]) :: [any()]
+    def _parse(<<>>, _types, acc), do: acc
+    def _parse(_binary, [], acc), do: acc
+    def _parse(binary, [{name, :string} | other_types], acc) do
+      {str, rest} = split_once(binary)
 
-    _parse(rest, other_types, [{name, str} | acc])
-  end
-  def _parse(binary, [{name, type} | other_types], acc) do
-    {value, rest} = Satchel.unpack_take(binary, type)
+      _parse(rest, other_types, [{name, str} | acc])
+    end
+    def _parse(binary, [{name, type} | other_types], acc) do
+      {value, rest} = Satchel.unpack_take(binary, type)
 
-    _parse(rest, other_types, [{name, value} | acc])
+      _parse(rest, other_types, [{name, value} | acc])
+    end
   end
 end

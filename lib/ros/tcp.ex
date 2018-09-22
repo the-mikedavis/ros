@@ -64,7 +64,7 @@ defmodule ROS.TCP do
   # for subscribers, send the connection header and then get data
   def handle_info({:tcp, _socket, packet}, %{sub: sub} = state) do
     packet
-    |> ROS.Message.parse_as(sub[:type])
+    |> ROS.Message.deserialize(sub[:type])
     |> sub[:callback].()
 
     {:noreply, state}
