@@ -1,18 +1,39 @@
-# ROS
+# ROS - Elixir
 
-To start your Phoenix server:
+## Example Publisher
 
-  * Install dependencies with `mix deps.get`
-  * Start Phoenix endpoint with `mix phx.server`
+```elixir
+use ROS.Node
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+children = [
+  node(:"/mynode", [
+    publisher(:mypub, "chatter", "std_msgs/String")
+  ])
+]
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+Supervisor.start_link(children)
 
-## Learn more
+for n <- 1..100 do
+  Publisher.publish(:mypub, %StdMsgs.String{data: "This is my #{n}th message!"})
+end
+```
 
-  * Official website: http://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Mailing list: http://groups.google.com/group/phoenix-talk
-  * Source: https://github.com/phoenixframework/phoenix
+## Example Subscriber
+
+```elixir
+use ROS.Node
+
+callback = fn %StdMsgs.String{data: data} ->
+  IO.puts(data)
+end
+
+children = [
+  node(:"/mynode", [
+    subscriber("chatter", "std_msgs/String", callback)
+  ])
+]
+
+Supervisor.start_link(children)
+
+ROS.spin()
+```
