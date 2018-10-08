@@ -27,9 +27,21 @@ defmodule ROS.Message.Compiler do
 
   private do
     defp form_module(name, typespec, types_guts, struct_def, md5sum, raw) do
+      mod_name = modularize(name)
+
       """
-      defmodule #{modularize(name)} do
+      defmodule #{mod_name} do
         @behaviour ROS.Message.Behaviour
+
+        @moduledoc "\""
+        The #{mod_name} struct.
+
+        The definition:
+
+        ```
+        #{String.trim(raw)}
+        ```
+        "\""
 
         @type t :: %__MODULE__{#{typespec}}
 
@@ -40,7 +52,7 @@ defmodule ROS.Message.Compiler do
 
         @impl ROS.Message.Behaviour
         def definition do
-          "#{raw}"
+          "#{String.trim(raw)}"
         end
 
         @impl ROS.Message.Behaviour
