@@ -8,8 +8,8 @@ defmodule ROS.Message.Compiler do
   """
 
   @doc "Create an Elixir module from a msg body and a name for that msg."
-  @spec gen_module(msg_file :: binary(), binary()) :: binary()
-  def gen_module(payload, name) do
+  @spec compile_string(msg_file :: binary(), binary()) :: binary()
+  def compile_string(payload, name) do
     parsed =
       payload
       |> String.trim()
