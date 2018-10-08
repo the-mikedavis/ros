@@ -8,65 +8,74 @@ defmodule ROS.Message.Compiler do
   """
 
   @doc "Create an Elixir module from a msg body and a name for that msg."
-  @spec compile_string(msg_file :: binary(), binary()) :: binary()
-  def compile_string(payload, name) do
-    parsed =
+  @spec create_module(binary(), binary(), binary()) :: {atom(), atom() | binary()}
+  def create_module(payload, name, md5sum) do
+    {parsed, constants} =
       payload
       |> String.trim()
       |> String.split("\n")
+      |> Enum.reject(&leading_whitespace?/1)
       |> Enum.map(&String.trim/1)
-      |> Enum.filter(&filter_comments/1)
+      |> Enum.reject(&comments?/1)
       |> Enum.map(&parse/1)
+      |> parse_constants()
 
     typespec = typespec_guts(parsed)
     types_guts = types_guts(parsed)
     struct_def = struct_guts(parsed)
 
-    form_module(name, typespec, types_guts, struct_def, "", payload)
+    {:ok, form_module(name, typespec, types_guts, struct_def, constants, md5sum, payload)}
+  end
+
+  @spec underscore(String.t()) :: [String.t()]
+  def underscore(name) do
+    name
+    |> String.split("/")
+    |> Enum.map(&Macro.underscore/1)
   end
 
   private do
-    defp form_module(name, typespec, types_guts, struct_def, md5sum, raw) do
+    defp form_module(name, typespec, types_guts, struct_def, constants, md5sum, raw) do
       mod_name = modularize(name)
+      definition =
+        raw
+        |> String.trim()
+        |> String.split("\n")
+        |> Enum.map(fn s -> "    " <> s end )
+        |> Enum.join("\n")
+
+      constants = Enum.map(constants, fn c -> "  " <> c end)
 
       """
       defmodule #{mod_name} do
         @behaviour ROS.Message.Behaviour
 
-        @moduledoc "\""
-        The #{mod_name} struct.
-
-        The definition:
-
-        ```
-        #{String.trim(raw)}
-        ```
-        "\""
-
         @type t :: %__MODULE__{#{typespec}}
 
-        defstruct #{struct_def}
+        defstruct [#{struct_def}]
 
         @impl ROS.Message.Behaviour
-        def md5sum, do: "#{md5sum}"
+        def md5sum, do: "#{String.trim(md5sum)}"
 
         @impl ROS.Message.Behaviour
         def definition do
-          "#{String.trim(raw)}"
+          "\""\n#{definition}
+          "\""
         end
 
         @impl ROS.Message.Behaviour
-        def types do
-          [#{types_guts}]
-        end
+        def types, do: [#{types_guts}]\n\n#{Enum.join(constants, "\n\n")}
       end
       """
     end
 
-    @spec filter_comments(String.t()) :: boolean()
-    defp filter_comments(""), do: false
-    defp filter_comments("#" <> _), do: false
-    defp filter_comments(_), do: true
+    @spec comments?(String.t()) :: boolean()
+    defp comments?(""), do: true
+    defp comments?("#" <> _), do: true
+    defp comments?(_), do: false
+
+    @spec leading_whitespace?(String.t()) :: boolean()
+    defp leading_whitespace?(line), do: String.starts_with?(line, " ")
 
     @spec typespec_guts({binary(), binary(), binary(), binary()}) :: binary()
     defp typespec_guts(parsed_msg) do
@@ -81,7 +90,7 @@ defmodule ROS.Message.Compiler do
     defp types_guts(parsed_msg) do
       parsed_msg
       |> Enum.map(fn {_type, original_type, name, _default} ->
-        "#{name}: :#{original_type}"
+        "#{name}: :\"#{original_type}\""
       end)
       |> Enum.join(", ")
     end
@@ -93,6 +102,27 @@ defmodule ROS.Message.Compiler do
         "#{name}: #{default}"
       end)
       |> Enum.join(", ")
+    end
+
+    defp parse_constants(parsed) do
+      {constants, others} =
+        Enum.split_with(parsed, fn {_type, _original_type, name, _default} ->
+          String.contains?(name, "=")
+        end)
+
+      constant_funs =
+        Enum.map(constants, fn
+          {_t, "string", name} ->
+            [fun_name, value] = String.split(name, "=")
+
+            "def #{String.downcase(fun_name)}, do: \"#{value}\""
+          {_t, _ot, name, _} ->
+            [fun_name, value] = String.split(name, "=")
+
+            "def #{String.downcase(fun_name)}, do: #{value}"
+        end)
+
+      {others, constant_funs}
     end
 
     # match / replace the angular brackets of a list / array
@@ -108,13 +138,13 @@ defmodule ROS.Message.Compiler do
     @spec parse(binary(), boolean()) :: {binary(), binary(), binary(), binary()}
     defp parse(entity, true) do
       # parse like a non-list type
-      {type, name, _default} =
+      {type, original_type, name, _default} =
         @list_regex
         |> Regex.replace(entity, "")
         |> parse(false)
 
       # become a list type
-      {"list(#{type})", name, "[]"}
+      {"list(#{type})", original_type, name, "[]"}
     end
 
     # not a list (a regular type)
@@ -141,6 +171,8 @@ defmodule ROS.Message.Compiler do
     @times ["time", "duration"]
     defp spec(t) when t in @times do
       {:ok, time} = Time.new(0, 0, 0)
+
+      # TODO conform to ROS time
 
       {"Time.t()", "#{inspect(time)}"}
     end
