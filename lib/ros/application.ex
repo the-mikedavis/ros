@@ -8,10 +8,10 @@ defmodule ROS.Application do
 
   def start(_type, _args) do
     children = [
-      node(:"/mynode", [publisher(:talker, "/chatter", "std_msgs/Int16")])
-      # node(:"/mynode", [
-      # subscriber("/chatter", "std_msgs/Float32", &IO.inspect/1)
-      # ])
+      # node(:"/mynode", [publisher(:talker, "/chatter", "std_msgs/Int16")])
+      node(:"/mynode", [
+        subscriber("/chatter", "std_msgs/Header", &IO.inspect/1)
+      ])
     ]
 
     opts = [strategy: :one_for_one, name: ROS.Supervisor]
