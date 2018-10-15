@@ -34,10 +34,7 @@ defmodule ROS.Message do
   """
   @spec split_once(binary()) :: {binary(), binary()}
   def split_once(binary) do
-    field_length =
-      binary
-      |> Bite.take(@block_length, 'l')
-      |> Bite.to_integer()
+    field_length = Satchel.unpack(binary, :uint32)
 
     field =
       binary

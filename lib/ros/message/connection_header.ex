@@ -89,7 +89,7 @@ defmodule ROS.Message.ConnectionHeader do
     defp translate("latching=1"), do: {:latching, false}
 
     defp translate(field) do
-      [lhs, rhs] = String.split(field, "=")
+      [lhs, rhs] = String.split(field, "=", parts: 2)
 
       {String.to_atom(lhs), rhs}
     end
@@ -112,9 +112,7 @@ defmodule ROS.Message.ConnectionHeader do
     defp field_length_binary(field) do
       field
       |> String.length()
-      |> Bite.from_integer()
-      |> Bite.pad_length(4)
-      |> Bite.reverse()
+      |> Satchel.pack(:uint32)
     end
   end
 end
