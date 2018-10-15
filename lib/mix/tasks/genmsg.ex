@@ -31,6 +31,7 @@ defmodule Mix.Tasks.Genmsg do
       all
       |> Enum.map(&unfold/1)
       |> List.flatten()
+      |> Enum.reject(&built_ins/1)
       |> Enum.chunk_every(20)
       |> Enum.each(fn chunk ->
         pmap(chunk, &install/1)
@@ -87,5 +88,9 @@ defmodule Mix.Tasks.Genmsg do
     defp unfold(msg) when is_binary(msg) do
       msg
     end
+
+    defp built_ins("std_msgs/Char"), do: true
+    defp built_ins("std_msgs/Byte"), do: true
+    defp built_ins(_), do: false
   end
 end

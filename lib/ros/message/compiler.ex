@@ -18,6 +18,7 @@ defmodule ROS.Message.Compiler do
       |> Enum.map(&String.trim/1)
       |> Enum.reject(&comments?/1)
       |> Enum.map(&parse/1)
+      |> Enum.map(&cleanse/1)
       |> parse_constants()
 
     typespec = typespec_guts(parsed)
@@ -133,6 +134,14 @@ defmodule ROS.Message.Compiler do
     defp parse(entity) do
       parse(entity, Regex.match?(@list_regex, entity))
     end
+
+    defp cleanse({_type, "char", name, default}) do
+      {"non_neg_integer()", "uint8", name, default}
+    end
+    defp cleanse({_type, "byte", name, default}) do
+      {"integer()", "int8", name, default}
+    end
+    defp cleanse(parsed), do: parsed
 
     # parse based on whether or not its a list type
     @spec parse(binary(), boolean()) :: {binary(), binary(), binary(), binary()}
