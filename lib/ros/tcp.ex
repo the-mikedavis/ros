@@ -9,19 +9,18 @@ defmodule ROS.TCP do
   # not been fully received, wait until the next call
   #
   # the do block must return `state`
-  defmacrop partial(packet, state, do: execute) do
+  defmacrop partial(packet, state, callback) do
     quote do
       partial = Map.get(unquote(state), :partial, "")
-      combined = partial <> unquote(packet)
+      packet = partial <> unquote(packet)
 
       state =
-        if partial?(combined) do
-          Map.put(unquote(state), :partial, combined)
+        if partial?(packet) do
+          Map.put(unquote(state), :partial, packet)
         else
-          IO.inspect(combined, label: "combined", limit: :infinity)
-          IO.inspect(String.length(combined), label: "|combined|", limit: :infinity)
+          {_size, full_message} = Satchel.unpack_take(packet, :uint32)
 
-          unquote(execute)
+          unquote(callback).(full_message)
           |> Map.delete(:partial)
         end
 
@@ -94,36 +93,35 @@ defmodule ROS.TCP do
 
   @impl GenServer
   def handle_info({:tcp, _socket, packet}, %{init: true} = state) do
-    partial packet, state do
-      # TODO
-      # combined
-      # |> ROS.Message.ConnectionHeader.parse()
-      # |> IO.inspect(label: "incoming connection header", limit: :infinity)
+    partial(packet, state, fn full_message ->
+      full_message
+      |> ROS.Message.ConnectionHeader.parse()
+      |> IO.inspect(label: "incoming connection header", limit: :infinity)
 
       Map.delete(state, :init)
-    end
+    end)
   end
 
   # for subscribers, send the connection header and then get data
   def handle_info({:tcp, _socket, packet}, %{sub: sub} = state) do
-    partial packet, state do
+    partial(packet, state, fn _ ->
       packet
       |> ROS.Message.deserialize(sub[:type])
       |> sub[:callback].()
 
       state
-    end
+    end)
   end
 
   # for publishers, parse the connection header
   def handle_info({:tcp, _socket, packet}, state) do
-    partial packet, state do
-      packet
+    partial(packet, state, fn full_message ->
+      full_message
       |> ROS.Message.ConnectionHeader.parse()
       |> IO.inspect(label: "incoming connection header", limit: :infinity)
 
       state
-    end
+    end)
   end
 
   def handle_info({:tcp_closed, _socket}, state) do

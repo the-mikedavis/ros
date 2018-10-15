@@ -41,9 +41,7 @@ defmodule ROS.Message.ConnectionHeader do
 
   @spec parse(binary()) :: %__MODULE__{}
   def parse(packet) do
-    [header_field] = ROS.Message.split(packet)
-
-    header_field
+    packet
     |> ROS.Message.split()
     |> into()
   end
