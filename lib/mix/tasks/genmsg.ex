@@ -7,13 +7,18 @@ defmodule Mix.Tasks.Genmsg do
   @shortdoc "Compiles all available messages"
   @recursive false
 
-  # compile all messages
+  # compile all messages in the mix.exs
   def run([]) do
-    {all, 0} = System.cmd("rosmsg", ["list"])
+    Mix.Project.get!().project()
+    |> Keyword.fetch(:msgs)
+    |> case do
+      {:ok, msgs} when is_list(msgs) ->
+        install_all(msgs)
 
-    all
-    |> String.split()
-    |> install_all()
+      _ ->
+        raise ":msgs key not found in mix.exs." <>
+          "Please supply a list of messages."
+    end
   end
 
   # compile specific messages
@@ -24,6 +29,8 @@ defmodule Mix.Tasks.Genmsg do
   private do
     defp install_all(all) do
       all
+      |> Enum.map(&unfold/1)
+      |> List.flatten()
       |> Enum.chunk_every(20)
       |> Enum.each(fn chunk ->
         pmap(chunk, &install/1)
@@ -38,14 +45,13 @@ defmodule Mix.Tasks.Genmsg do
       path = path_for(underscored)
 
       with false <- File.exists?(path),
-           {:ok, module} <- Compiler.create_module(definition, name, md5sum) do#,
-           #formatted <- Code.format_string!(module) do
+           {:ok, module} <- Compiler.create_module(definition, name, md5sum),
+           formatted <- Code.format_string!(module) do
         IO.puts("Compile successful. Installing #{name} to #{path}.")
 
         path
         |> File.open!([:write, :utf8])
-        |> IO.binwrite(module)
-        # |> IO.binwrite(formatted)
+        |> IO.binwrite(formatted)
       else
         {:error, reason} -> IO.puts("Skipping #{name}: #{reason}")
       end
@@ -69,6 +75,17 @@ defmodule Mix.Tasks.Genmsg do
       enum
       |> Enum.map(&Task.async(fn -> func.(&1) end))
       |> Enum.map(&Task.await/1)
+    end
+
+    defp unfold({:grep, pattern}) do
+      {msgs, 0} = System.cmd("rosmsg", ["list"])
+
+      msgs
+      |> String.split("\n")
+      |> Enum.filter(&String.contains?(&1, pattern))
+    end
+    defp unfold(msg) when is_binary(msg) do
+      msg
     end
   end
 end
