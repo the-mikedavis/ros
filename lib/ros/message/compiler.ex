@@ -175,7 +175,7 @@ defmodule ROS.Message.Compiler do
         |> parse(false)
 
       # become a list type
-      {"list(#{type})", original_type, name, "[]"}
+      {"list(#{type})", original_type <> "[]", name, "[]"}
     end
 
     # not a list (a regular type)
