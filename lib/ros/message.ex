@@ -91,11 +91,22 @@ defmodule ROS.Message do
   end
 
   def deserialize(binary, type_module) do
-    {innards, _rest} = split_once(binary)
+    # TODO: do this in the tcp module
+    {innards, _left_overs} = split_once(binary)
 
-    parsed_kw_list = _parse(innards, type_module.types(), [])
+    {parsed_kw_list, _rest} = _parse_take(innards, type_module.types(), [])
 
     struct(type_module, parsed_kw_list)
+  end
+
+  @spec deserialize_take(binary(), module() | binary()) :: {struct(), binary()}
+  def deserialize_take(binary, type) when is_binary(type) do
+    deserialize_take(binary, type_to_module(type))
+  end
+  def deserialize_take(binary, type_module) do
+    {parsed_kw_list, rest} = _parse_take(binary, type_module.types(), [])
+
+    {struct(type_module, parsed_kw_list), rest}
   end
 
   @doc """
@@ -108,20 +119,29 @@ defmodule ROS.Message do
     <<16, 0, 0, 0, 0, 0, 176, 65, 0, 0, 4, 66, 0, 0, 48, 66, 0, 0, 0, 0>>
   """
   @spec serialize(struct()) :: binary()
-  def serialize(%type{} = data), do: _serialize(type.types(), "", data)
+  def serialize(%type{} = msg), do: _serialize(type.types(), "", msg)
 
   private do
     @spec _serialize([{atom(), atom()}], binary(), struct()) :: binary()
     defp _serialize([], acc, _), do: pack_string(acc)
+    defp _serialize([{name, :string} | other_types], acc, msg) do
+      _serialize(other_types, acc <> pack_string(Map.get(msg, name)), msg)
+    end
     defp _serialize([{name, type} | other_types], acc, msg) do
+      type_string = Atom.to_string(type)
+
       addition =
         cond do
-          type == :string ->
-            pack_string(Map.get(msg, name))
-
-          type_is_list?(type) ->
+          # List/Array
+          String.contains?(type_string, "[]") ->
             serialize_list(Map.get(msg, name), type)
 
+          # Module
+          String.contains?(type_string, "/") ->
+            sub_msg = Map.get(msg, name)
+            serialize(sub_msg)
+
+          # Normal Built-in types
           true ->
             Satchel.pack(Map.get(msg, name), type)
         end
@@ -135,7 +155,7 @@ defmodule ROS.Message do
       serialized_list =
         list
         |> Enum.map(&Satchel.pack(type, &1))
-        |> String.join("")
+        |> Enum.join("")
 
       serialized_length <> serialized_list
     end
@@ -152,14 +172,6 @@ defmodule ROS.Message do
         |> length_field
 
       len_field <> str
-    end
-
-    @spec type_is_list?(atom()) :: boolean()
-    defp type_is_list?(type) do
-      type
-      |> Atom.to_string()
-      |> String.reverse()
-      |> String.starts_with?("[]")
     end
 
     @spec module_to_type(atom()) :: String.t()
@@ -185,20 +197,75 @@ defmodule ROS.Message do
     end
 
     # a tail recursive parser used by `deserialize/2`
-    @spec _parse(binary(), [{atom(), atom()}], [any()]) :: [any()]
-    def _parse(<<>>, _types, acc), do: acc
-    def _parse(_binary, [], acc), do: acc
+    @spec _parse_take(binary(), [{atom(), atom()}], [any()]) :: {any(), binary()}
+    def _parse_take(<<>>, _types, acc), do: {acc, <<>>}
+    def _parse_take(binary, [], acc), do: {acc, binary}
 
-    def _parse(binary, [{name, :string} | other_types], acc) do
+    def _parse_take(binary, [{name, :string} | other_types], acc) do
       {str, rest} = split_once(binary)
 
-      _parse(rest, other_types, [{name, str} | acc])
+      _parse_take(rest, other_types, [{name, str} | acc])
     end
 
-    def _parse(binary, [{name, type} | other_types], acc) do
+    def _parse_take(binary, [{name, type} | other_types], acc) do
+      type_string = Atom.to_string(type)
+
+      array? = String.ends_with?(type_string, "[]")
+      module? = String.contains?(type_string, "/")
+
+      {value, rest} =
+        cond do
+          array? and module? ->
+            module =
+              type
+              |> Atom.to_string()
+              |> String.trim("[]")
+
+            deserialize_take_list(binary, module)
+
+          array? ->
+            unlisted_type =
+              type
+              |> Atom.to_string()
+              |> String.trim("[]")
+              |> String.to_atom()
+
+            unpack_take_list(binary, unlisted_type)
+
+          module? ->
+            deserialize_take(binary, Atom.to_string(type))
+
+          true ->
+            Satchel.unpack_take(binary, type)
+        end
+
+      _parse_take(rest, other_types, [{name, value} | acc])
+    end
+
+    defp unpack_take_list(binary, type) do
+      {list_length, rest} = Satchel.unpack_take(binary, :uint32)
+
+      unpack_take_list(rest, type, list_length, [])
+    end
+
+    defp unpack_take_list(binary, _type, 0, acc), do: {acc, binary}
+    defp unpack_take_list(binary, type, n, acc) do
       {value, rest} = Satchel.unpack_take(binary, type)
 
-      _parse(rest, other_types, [{name, value} | acc])
+      unpack_take_list(rest, type, n - 1, [value | acc])
+    end
+
+    # parse a module array
+    defp deserialize_take_list(binary, type) do
+      {list_length, rest} = Satchel.unpack_take(binary, :uint32)
+
+      deserialize_take_list(rest, type, list_length, [])
+    end
+    defp deserialize_take_list(binary, _type, 0, acc), do: {acc, binary}
+    defp deserialize_take_list(binary, type, n, acc) do
+      {value, rest} = deserialize_take(binary, type)
+
+      deserialize_take_list(rest, type, n - 1, [value | acc])
     end
   end
 end

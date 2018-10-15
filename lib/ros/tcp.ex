@@ -10,7 +10,7 @@ defmodule ROS.TCP do
 
   @impl GenServer
   def init(args) do
-    {:ok, args}
+    {:ok, Map.put(args, :init, true)}
   end
 
   @impl GenServer
@@ -68,11 +68,24 @@ defmodule ROS.TCP do
   end
 
   @impl GenServer
+  def handle_info({:tcp, _socket, packet}, %{init: true} = state) do
+    Logger.warn("Ignoring a connection header")
+    # IO.inspect(packet, label: "conn header?", limit: :infinity)
+
+    {:noreply, Map.delete(state, :init)}
+  end
+
   # for subscribers, send the connection header and then get data
   def handle_info({:tcp, _socket, packet}, %{sub: sub} = state) do
-    packet
-    |> ROS.Message.deserialize(sub[:type])
-    |> sub[:callback].()
+    IO.inspect(packet, label: "packet", limit: :infinity)
+
+    if Satchel.unpack(packet, :uint32) > 1_000_000 do
+      Logger.warn("Ignoring a bad packet")
+    else
+      packet
+      |> ROS.Message.deserialize(sub[:type])
+      |> sub[:callback].()
+    end
 
     {:noreply, state}
   end

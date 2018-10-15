@@ -10,7 +10,7 @@ defmodule ROS.Application do
     children = [
       # node(:"/mynode", [publisher(:talker, "/chatter", "std_msgs/Int16")])
       node(:"/mynode", [
-        subscriber("/chatter", "std_msgs/Header", &IO.inspect/1)
+        subscriber("/chatter", "std_msgs/Int32MultiArray", &IO.inspect/1)
       ])
     ]
 
