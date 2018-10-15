@@ -17,7 +17,7 @@ defmodule Mix.Tasks.Genmsg do
 
       _ ->
         raise ":msgs key not found in mix.exs." <>
-          "Please supply a list of messages."
+                "Please supply a list of messages."
     end
   end
 
@@ -85,6 +85,7 @@ defmodule Mix.Tasks.Genmsg do
       |> String.split("\n")
       |> Enum.filter(&String.contains?(&1, pattern))
     end
+
     defp unfold(msg) when is_binary(msg) do
       msg
     end

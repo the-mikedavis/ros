@@ -54,7 +54,8 @@ defmodule ROS.TCP do
     {:noreply, Map.put(state, :socket, socket)}
   end
 
-  def handle_cast({:send, data}, %{socket: socket} = state) when is_binary(data) do
+  def handle_cast({:send, data}, %{socket: socket} = state)
+      when is_binary(data) do
     :gen_tcp.send(socket, data)
 
     {:noreply, state}

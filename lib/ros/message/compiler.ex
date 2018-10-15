@@ -8,7 +8,8 @@ defmodule ROS.Message.Compiler do
   """
 
   @doc "Create an Elixir module from a msg body and a name for that msg."
-  @spec create_module(binary(), binary(), binary()) :: {atom(), atom() | binary()}
+  @spec create_module(binary(), binary(), binary()) ::
+          {atom(), atom() | binary()}
   def create_module(payload, name, md5sum) do
     {parsed, constants} =
       payload
@@ -25,7 +26,16 @@ defmodule ROS.Message.Compiler do
     types_guts = types_guts(parsed)
     struct_def = struct_guts(parsed)
 
-    {:ok, form_module(name, typespec, types_guts, struct_def, constants, md5sum, payload)}
+    {:ok,
+     form_module(
+       name,
+       typespec,
+       types_guts,
+       struct_def,
+       constants,
+       md5sum,
+       payload
+     )}
   end
 
   @spec underscore(String.t()) :: [String.t()]
@@ -36,13 +46,22 @@ defmodule ROS.Message.Compiler do
   end
 
   private do
-    defp form_module(name, typespec, types_guts, struct_def, constants, md5sum, raw) do
+    defp form_module(
+           name,
+           typespec,
+           types_guts,
+           struct_def,
+           constants,
+           md5sum,
+           raw
+         ) do
       mod_name = modularize(name)
+
       definition =
         raw
         |> String.trim()
         |> String.split("\n")
-        |> Enum.map(fn s -> "    " <> s end )
+        |> Enum.map(fn s -> "    " <> s end)
         |> Enum.join("\n")
 
       constants = Enum.map(constants, fn c -> "  " <> c end)
@@ -117,6 +136,7 @@ defmodule ROS.Message.Compiler do
             [fun_name, value] = String.split(name, "=")
 
             "def #{String.downcase(fun_name)}, do: \"#{value}\""
+
           {_t, _ot, name, _} ->
             [fun_name, value] = String.split(name, "=")
 
@@ -138,9 +158,11 @@ defmodule ROS.Message.Compiler do
     defp cleanse({_type, "char", name, default}) do
       {"non_neg_integer()", "uint8", name, default}
     end
+
     defp cleanse({_type, "byte", name, default}) do
       {"integer()", "int8", name, default}
     end
+
     defp cleanse(parsed), do: parsed
 
     # parse based on whether or not its a list type
