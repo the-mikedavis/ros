@@ -169,7 +169,7 @@ defmodule ROS.Message do
       len_field =
         str
         |> String.length()
-        |> length_field
+        |> length_field()
 
       len_field <> str
     end
