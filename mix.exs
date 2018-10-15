@@ -17,7 +17,8 @@ defmodule ROS.MixProject do
         bless: :test
       ],
       test_coverage: [tool: ExCoveralls],
-      aliases: aliases()
+      aliases: aliases(),
+      msgs: messages()
     ]
   end
 
@@ -67,5 +68,12 @@ defmodule ROS.MixProject do
 
       Mix.Task.run(task, args)
     end)
+  end
+
+  defp messages do
+    [
+      {:grep, "std_msgs"},
+      "sensor_msgs/Image"
+    ]
   end
 end
