@@ -108,16 +108,38 @@ defmodule ROS.Message do
     <<16, 0, 0, 0, 0, 0, 176, 65, 0, 0, 4, 66, 0, 0, 48, 66, 0, 0, 0, 0>>
   """
   @spec serialize(struct()) :: binary()
-  def serialize(%type{} = data) do
-    type.types()
-    |> Enum.reduce(<<>>, fn
-      {name, :string}, acc -> acc <> pack_string(Map.get(data, name))
-      {name, type}, acc -> acc <> Satchel.pack(Map.get(data, name), type)
-    end)
-    |> pack_string()
-  end
+  def serialize(%type{} = data), do: _serialize(type.types(), "", data)
 
   private do
+    @spec _serialize([{atom(), atom()}], binary(), struct()) :: binary()
+    defp _serialize([], acc, _), do: pack_string(acc)
+    defp _serialize([{name, type} | other_types], acc, msg) do
+      addition =
+        cond do
+          type == :string ->
+            pack_string(Map.get(msg, name))
+
+          type_is_list?(type) ->
+            serialize_list(Map.get(msg, name), type)
+
+          true ->
+            Satchel.pack(Map.get(msg, name), type)
+        end
+
+      _serialize(other_types, acc <> addition, msg)
+    end
+
+    defp serialize_list(list, type) do
+      serialized_length = Satchel.pack(:uint32, length(list))
+
+      serialized_list =
+        list
+        |> Enum.map(&Satchel.pack(type, &1))
+        |> String.join("")
+
+      serialized_length <> serialized_list
+    end
+
     # turn 168 -> <<168, 0, 0, 0>>
     @spec length_field(non_neg_integer()) :: binary()
     defp length_field(len), do: <<len::little-integer-32>>
@@ -130,6 +152,14 @@ defmodule ROS.Message do
         |> length_field
 
       len_field <> str
+    end
+
+    @spec type_is_list?(atom()) :: boolean()
+    defp type_is_list?(type) do
+      type
+      |> Atom.to_string()
+      |> String.reverse()
+      |> String.starts_with?("[]")
     end
 
     @spec module_to_type(atom()) :: String.t()
