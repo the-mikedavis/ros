@@ -1,6 +1,8 @@
 # ROS - Elixir
 
-Caution: this repo is still really heavily under development. I don't yet have solutions for interoperability with `rosrun` or `roslaunch`, nor have I completely nailed down services and service proxies. Please use only for development purposes and curiosity only.
+Caution: this repo is still really heavily under development. I don't yet have
+solutions for interoperability with `rosrun` or `roslaunch`. Please use only
+for development purposes and curiosity only.
 
 ## Example Publisher
 
