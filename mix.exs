@@ -18,7 +18,8 @@ defmodule ROS.MixProject do
       ],
       test_coverage: [tool: ExCoveralls],
       aliases: aliases(),
-      msgs: messages()
+      msg: messages(),
+      srv: srvs()
     ]
   end
 
@@ -74,6 +75,12 @@ defmodule ROS.MixProject do
     [
       {:pattern, "std_msgs"},
       "sensor_msgs/Image"
+    ]
+  end
+
+  defp srvs do
+    [
+      {:pattern, "rospy_tutorials"}
     ]
   end
 end

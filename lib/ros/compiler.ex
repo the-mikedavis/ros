@@ -48,7 +48,102 @@ defmodule ROS.Compiler do
     |> Enum.join("\n")
   end
 
+  @spec install([String.t() | {atom(), String.t()}], :msg | :srv) :: :ok
+  def install([], key) do
+    Mix.Project.get!().project()
+    |> Keyword.fetch(key)
+    |> case do
+      {:ok, to_install} when is_list(to_install) ->
+        install_all(to_install, key)
+
+      _ ->
+        raise ":#{key} key not found in mix.exs." <>
+                "Please supply a list of #{key}s."
+    end
+
+    :ok
+  end
+
+  def install(argv, key) do
+    install_all(argv, key)
+
+    :ok
+  end
+
   private do
+    defp install_all(all, key) do
+      all
+      |> Enum.map(&unfold(&1, key))
+      |> List.flatten()
+      |> Enum.reject(&built_in?/1)
+      |> Enum.chunk_every(20)
+      |> Enum.each(fn chunk ->
+        pmap(chunk, &install_one(&1, key))
+      end)
+    end
+
+    @spec unfold(String.t() | {:pattern, String.t()}, :msg | :srv) :: [String.t()] | String.t()
+    defp unfold({:pattern, pattern}, key) do
+      {msgs, 0} = System.cmd("ros#{key}", ["list"])
+
+      msgs
+      |> String.split("\n")
+      |> Enum.filter(&String.contains?(&1, pattern))
+    end
+
+    defp unfold(msg, _key) when is_binary(msg) do
+      msg
+    end
+
+    # further deprecation of bad types
+    defp built_in?("std_msgs/Char"), do: true
+    defp built_in?("std_msgs/Byte"), do: true
+    defp built_in?(_), do: false
+
+    defp pmap(enum, func) do
+      enum
+      |> Enum.map(&Task.async(fn -> func.(&1) end))
+      |> Enum.map(&Task.await/1)
+    end
+
+    defp install_one(name, key) do
+      {definition, 0} = System.cmd("ros#{key}", ["show", name])
+      {md5sum, 0} = System.cmd("ros#{key}", ["md5", name])
+      underscored = Helpers.underscore(name)
+      make_project_directory(underscored, key)
+      path = path_for(underscored, key)
+
+      with false <- File.exists?(path),
+           compiler <- compiler_for(key),
+           {:ok, module} <- compiler.create_module(definition, name, md5sum),
+           formatted <- Code.format_string!(module) do
+        IO.puts("Compile successful. Installing #{name} to #{path}.")
+
+        path
+        |> File.open!([:write, :utf8])
+        |> IO.binwrite(formatted)
+      else
+        {:error, reason} -> IO.puts("Skipping #{name}: #{reason}")
+      end
+    end
+
+    defp make_project_directory(underscored, key) do
+      [_filename | dirs] =
+        Enum.reverse(["lib", "generated_#{key}s" | underscored])
+
+      dirs
+      |> Enum.reverse()
+      |> Path.join()
+      |> File.mkdir_p!()
+    end
+
+    defp path_for(underscored, key) do
+      Path.join(["lib", "generated_#{key}s" | underscored]) <> ".ex"
+    end
+
+    defp compiler_for(:msg), do: ROS.Message.Compiler
+    defp compiler_for(:srv), do: ROS.Service.Compiler
+
     # removes whitespace, comments, etc. and splits on newlines
     @spec prepare_definition(String.t()) :: [String.t()]
     defp prepare_definition(definition) do
