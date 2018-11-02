@@ -35,4 +35,4 @@ ros-*.tar
 # variables.
 /config/*.secret.exs
 
-lib/generated_messages
+lib/generated_*
