@@ -1,6 +1,8 @@
 defmodule ROS.Message do
   use Private
 
+  import ROS.Helpers, only: [pack_string: 1]
+
   @moduledoc """
   Logic and helper functions for handling ROS messages sent between nodes.
   """
@@ -155,20 +157,6 @@ defmodule ROS.Message do
         |> Enum.join("")
 
       serialized_length <> serialized_list
-    end
-
-    # turn 168 -> <<168, 0, 0, 0>>
-    @spec length_field(non_neg_integer()) :: binary()
-    defp length_field(len), do: <<len::little-integer-32>>
-
-    @spec pack_string(binary()) :: binary()
-    defp pack_string(str) do
-      len_field =
-        str
-        |> String.length()
-        |> length_field()
-
-      len_field <> str
     end
 
     @spec module_to_type(atom()) :: String.t()
