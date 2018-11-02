@@ -1,6 +1,7 @@
 defmodule ROS.SlaveApi do
   use GenServer
   use Private
+  require Logger
 
   # unclear as of yet if this is useful... doubtful
   @default_state %{remote_publishers: %{}}
@@ -71,6 +72,7 @@ defmodule ROS.SlaveApi do
   end
 
   def handle_call({fun, _params}, _from, state) do
+    Logger.warn(fn -> "no implementation for #{fun} in slave api" end)
     {:relply, [-1, "method not found", fun], state}
   end
 
