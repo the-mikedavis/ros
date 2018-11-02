@@ -2,7 +2,7 @@ defmodule Mix.Tasks.Genmsg do
   use Mix.Task
   use Private
 
-  alias ROS.Message.Compiler
+  alias ROS.{Helpers, Message.Compiler}
 
   @shortdoc "Compiles all available messages"
   @recursive false
@@ -41,7 +41,7 @@ defmodule Mix.Tasks.Genmsg do
     defp install(name) do
       {definition, 0} = System.cmd("rosmsg", ["show", name])
       {md5sum, 0} = System.cmd("rosmsg", ["md5", name])
-      underscored = Compiler.underscore(name)
+      underscored = Helpers.underscore(name)
       make_project_directory(underscored)
       path = path_for(underscored)
 
@@ -78,7 +78,7 @@ defmodule Mix.Tasks.Genmsg do
       |> Enum.map(&Task.await/1)
     end
 
-    defp unfold({:grep, pattern}) do
+    defp unfold({:pattern, pattern}) do
       {msgs, 0} = System.cmd("rosmsg", ["list"])
 
       msgs

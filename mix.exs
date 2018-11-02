@@ -72,7 +72,7 @@ defmodule ROS.MixProject do
 
   defp messages do
     [
-      {:grep, "std_msgs"},
+      {:pattern, "std_msgs"},
       "sensor_msgs/Image"
     ]
   end
