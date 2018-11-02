@@ -1,26 +1,35 @@
 defmodule ROS.Helpers do
   @moduledoc false
 
-  # executes a `do` block once a full packet has been received; if it has
+  # Helpers for internal use
+
+  # executes a function once a full packet has been received; if it has
   # not been fully received, wait until the next call
   #
-  # the do block must return `state`
+  # the function must return `state`
   defmacro partial(packet, state, callback) do
     quote do
+      # get the partial packet from the state, an empty binary otherwise
       partial = Map.get(unquote(state), :partial, "")
+      # concatenate that partial packet with this new arrival
       packet = partial <> unquote(packet)
 
+      # if this isn't the full packet,
       state =
         if ROS.Helpers.partial?(packet) do
+          # put it as a partial packet
           Map.put(unquote(state), :partial, packet)
         else
+          # take away the header that says the size of the message
           {_size, full_message} = Satchel.unpack_take(packet, :uint32)
 
+          # call the function to do when the message has fully arrived
           full_message
           |> unquote(callback).()
           |> Map.delete(:partial)
         end
 
+      # intended for `handle_info/2`
       {:noreply, state}
     end
   end
@@ -32,6 +41,8 @@ defmodule ROS.Helpers do
     String.length(rest) < len
   end
 
+  # serialize a string. strings are preceeded by their length as a 32 bit
+  # unsigned integer
   @spec pack_string(binary()) :: binary()
   def pack_string(str) do
     len_field =

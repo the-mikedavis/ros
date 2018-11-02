@@ -2,6 +2,8 @@ defmodule ROS.Subscriber do
   use DynamicSupervisor
   require Logger
 
+  @moduledoc false
+
   def from_node_name(node_name, opts) do
     String.to_atom(Atom.to_string(node_name) <> "_" <> opts[:topic])
   end
@@ -14,23 +16,7 @@ defmodule ROS.Subscriber do
 
   @impl DynamicSupervisor
   def init(opts) do
-    {ip, port} = opts[:uri]
-
-    # TODO: wait until this succeeds
-    Logger.debug(fn ->
-      inspect(
-        Xenium.call!(
-          ROS.SlaveApi.master_uri(),
-          "registerSubscriber",
-          [
-            Atom.to_string(opts[:node_name]),
-            opts[:topic],
-            opts[:type],
-            "http://#{ip}:#{port}"
-          ]
-        )
-      )
-    end)
+    ROS.MasterApi.register_subscriber(opts)
 
     DynamicSupervisor.init(strategy: :one_for_one)
   end

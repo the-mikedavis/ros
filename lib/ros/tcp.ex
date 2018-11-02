@@ -3,6 +3,8 @@ defmodule ROS.TCP do
   use Private
   require Logger
 
+  @moduledoc false
+
   alias ROS.Message.ConnectionHeader, as: ConnHead
   import ROS.Helpers, only: [partial: 3]
 

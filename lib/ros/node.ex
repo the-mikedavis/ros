@@ -3,6 +3,8 @@ defmodule ROS.Node do
   use Private
   require Logger
 
+  @moduledoc false
+
   @behaviour :cowboy_handler
 
   @xml_header %{"Content-Type" => "text/xml"}

@@ -1,6 +1,14 @@
 defmodule ROS.MasterApi do
   require Logger
 
+  @moduledoc false
+
+  # The Master API formalized as functions.
+  #
+  # Function names take their lowercase form. Don't use this module. It's only
+  # meant to be used in the underlying calls to setup publishers, subscribers,
+  # and services.
+
   def lookup_service(opts) do
     {ip, port} = opts[:uri]
 
@@ -25,6 +33,17 @@ defmodule ROS.MasterApi do
       Atom.to_string(pub[:node_name]),
       pub[:topic],
       pub[:type],
+      "http://#{ip}:#{port}"
+    ])
+  end
+
+  def register_subscriber(sub) do
+    {ip, port} = sub[:uri]
+
+    make_call("registerSubscriber", [
+      Atom.to_string(sub[:node_name]),
+      sub[:topic],
+      sub[:type],
       "http://#{ip}:#{port}"
     ])
   end
