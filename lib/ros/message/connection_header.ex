@@ -16,7 +16,8 @@ defmodule ROS.Message.ConnectionHeader do
           error: String.t(),
           persistent: boolean(),
           tcp_nodelay: boolean(),
-          latching: boolean()
+          latching: boolean(),
+          probe: boolean()
         }
 
   defstruct callerid: nil,
@@ -28,7 +29,8 @@ defmodule ROS.Message.ConnectionHeader do
             error: nil,
             persistent: false,
             tcp_nodelay: false,
-            latching: false
+            latching: false,
+            probe: false
 
   def into(fields) do
     map =
@@ -80,6 +82,8 @@ defmodule ROS.Message.ConnectionHeader do
     defp translate("persistent=1"), do: {:persistent, false}
     defp translate("latching=0"), do: {:latching, false}
     defp translate("latching=1"), do: {:latching, false}
+    defp translate("probe=0"), do: {:probe, false}
+    defp translate("probe=1"), do: {:probe, true}
 
     defp translate(field) do
       [lhs, rhs] = String.split(field, "=", parts: 2)
@@ -88,12 +92,12 @@ defmodule ROS.Message.ConnectionHeader do
     end
 
     defp serialize_field({key, true})
-         when key in [:tcp_nodelay, :persistent, :latching] do
+         when key in [:tcp_nodelay, :persistent, :latching, :probe] do
       Atom.to_string(key) <> "=" <> "1"
     end
 
     defp serialize_field({key, false})
-         when key in [:tcp_nodelay, :persistent, :latching] do
+         when key in [:tcp_nodelay, :persistent, :latching, :probe] do
       Atom.to_string(key) <> "=" <> "0"
     end
 
