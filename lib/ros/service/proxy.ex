@@ -5,6 +5,24 @@ defmodule ROS.Service.Proxy do
 
   alias ROS.Message.ConnectionHeader, as: ConnHead
 
+  @moduledoc """
+  Service Proxies allow you to make requests to services.
+
+  All requests to services are blocking. Such is the nature of ROS Service
+  calls. If you have a service running, you can use a service proxy like so:
+
+      iex> import ROS.Node.Spec
+      iex> alias ROS.Service.Proxy, as: SrvPrx
+      iex> children = [
+      ...>   node(:mynode, [
+      ...>     service_proxy(:myproxy, "/add_two_ints", "rospy_tutorials/AddTwoInts")
+      ...>   ]
+      ...> ]
+      iex> Supervisor.start_link(children, strategy: :one_for_one)
+      iex> SrvPrx.request(:myproxy, %RospyTutorials.AddTwoInts.Request{a: 3, b: 4))
+      {:ok, %RospyTutorials.AddTwoInts.Response{sum: 7}}
+  """
+
   ## Client API
 
   @doc """
@@ -15,9 +33,9 @@ defmodule ROS.Service.Proxy do
 
   ## Examples
 
-    iex> alias ROS.Service.Proxy, as: SrvPrx
-    iex> SrvPrx.request(:myproxy, %RospyTutorials.AddTwoInts.Request{a: 3, b: 4))
-    {:ok, %RospyTutorials.AddTwoInts.Response{sum: 7}}
+      iex> alias ROS.Service.Proxy, as: SrvPrx
+      iex> SrvPrx.request(:myproxy, %RospyTutorials.AddTwoInts.Request{a: 3, b: 4))
+      {:ok, %RospyTutorials.AddTwoInts.Response{sum: 7}}
   """
   @spec request(atom(), struct()) :: {:ok, struct()} | {:error, String.t()}
   def request(proxy, data, timeout \\ 5000),
@@ -30,11 +48,11 @@ defmodule ROS.Service.Proxy do
 
   ## Examples
 
-    iex> alias ROS.Service.Proxy, as: SrvPrx
-    iex> SrvPrx.request!(:myproxy, %RospyTutorials.AddTwoInts.Request{a: 3, b: 4))
-    %RospyTutorials.AddTwoInts.Response{sum: 7}
-    iex> SrvPrx.request!(:ididntmakethisserviceproxy, %ThisDoesntExist{})
-    (** ROS.Service.Error) ...
+      iex> alias ROS.Service.Proxy, as: SrvPrx
+      iex> SrvPrx.request!(:myproxy, %RospyTutorials.AddTwoInts.Request{a: 3, b: 4))
+      %RospyTutorials.AddTwoInts.Response{sum: 7}
+      iex> SrvPrx.request!(:ididntmakethisserviceproxy, %ThisDoesntExist{})
+      (** ROS.Service.Error) ...
   """
   @spec request!(atom(), struct()) :: struct() | no_return()
   def request!(proxy, data, timeout \\ 5000) do
