@@ -19,7 +19,7 @@ defmodule ROS.Publisher do
 
   @impl DynamicSupervisor
   def init(opts) do
-    MasterApi.register_publisher(opts)
+    ROS.MasterApi.register_publisher(opts)
 
     DynamicSupervisor.init(strategy: :one_for_one)
   end

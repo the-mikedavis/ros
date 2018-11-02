@@ -19,12 +19,12 @@ defmodule ROS.MasterApi do
   end
 
   def register_publisher(pub) do
-    {ip, port} = opts[:uri]
+    {ip, port} = pub[:uri]
 
     make_call("registerPublisher", [
-      Atom.to_string(opts[:node_name]),
-      opts[:topic],
-      opts[:type],
+      Atom.to_string(pub[:node_name]),
+      pub[:topic],
+      pub[:type],
       "http://#{ip}:#{port}"
     ])
   end
