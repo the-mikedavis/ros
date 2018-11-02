@@ -19,23 +19,7 @@ defmodule ROS.Publisher do
 
   @impl DynamicSupervisor
   def init(opts) do
-    {ip, port} = opts[:uri]
-
-    # TODO: wait until this succeeds
-    Logger.debug(fn ->
-      inspect(
-        Xenium.call!(
-          ROS.SlaveApi.master_uri(),
-          "registerPublisher",
-          [
-            Atom.to_string(opts[:node_name]),
-            opts[:topic],
-            opts[:type],
-            "http://#{ip}:#{port}"
-          ]
-        )
-      )
-    end)
+    MasterApi.register_publisher(opts)
 
     DynamicSupervisor.init(strategy: :one_for_one)
   end
