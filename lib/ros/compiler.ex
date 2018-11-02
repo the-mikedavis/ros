@@ -33,7 +33,8 @@ defmodule ROS.Compiler do
       |> Enum.map(&cleanse/1)
       |> parse_constants()
 
-    {types_guts(parsed), typespec_guts(parsed), struct_guts(parsed), constant_definitions}
+    {types_guts(parsed), typespec_guts(parsed), struct_guts(parsed),
+     constant_definitions}
   end
 
   @spec prefix(String.t(), String.t()) :: String.t()
@@ -82,7 +83,8 @@ defmodule ROS.Compiler do
       end)
     end
 
-    @spec unfold(String.t() | {:pattern, String.t()}, :msg | :srv) :: [String.t()] | String.t()
+    @spec unfold(String.t() | {:pattern, String.t()}, :msg | :srv) ::
+            [String.t()] | String.t()
     defp unfold({:pattern, pattern}, key) do
       {msgs, 0} = System.cmd("ros#{key}", ["list"])
 
