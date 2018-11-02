@@ -40,7 +40,7 @@ defmodule ROS.Publisher do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  @spec connect(Keyword.t(), String.t()) :: :ok
+  @spec connect(Keyword.t(), String.t()) :: non_neg_integer()
   def connect(publisher, "TCPROS") do
     spec = {ROS.TCP, %{pub: publisher}}
 
@@ -53,7 +53,7 @@ defmodule ROS.Publisher do
     # Broadcast the message to all open connections
     publisher
     |> DynamicSupervisor.which_children()
-    |> Enum.map(fn {_, pid, _type, _module} ->
+    |> Enum.each(fn {_, pid, _type, _module} ->
       GenServer.cast(pid, {:send, message})
     end)
   end
