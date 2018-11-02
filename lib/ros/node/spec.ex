@@ -33,7 +33,12 @@ defmodule ROS.Node.Spec do
     {ROS.Service.Proxy, opts ++ base_opts}
   end
 
-  @spec service(String.t(), String.t() | module(), (struct() -> any()), Keyword.t()) :: {module(), Keyword.t()}
+  @spec service(
+          String.t(),
+          String.t() | module(),
+          (struct() -> any()),
+          Keyword.t()
+        ) :: {module(), Keyword.t()}
   def service(service, type, callback, opts \\ []) do
     base_opts = [service: service, type: type, callback: callback]
 

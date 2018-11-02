@@ -37,7 +37,8 @@ defmodule ROS.Service.Proxy do
       iex> SrvPrx.request(:myproxy, %RospyTutorials.AddTwoInts.Request{a: 3, b: 4))
       {:ok, %RospyTutorials.AddTwoInts.Response{sum: 7}}
   """
-  @spec request(atom(), struct(), non_neg_integer()) :: {:ok, struct()} | {:error, String.t()}
+  @spec request(atom(), struct(), non_neg_integer()) ::
+          {:ok, struct()} | {:error, String.t()}
   def request(proxy, data, timeout \\ 5000),
     do: GenServer.call(proxy, {:request, data}, timeout)
 
@@ -58,7 +59,6 @@ defmodule ROS.Service.Proxy do
   def request!(proxy, data, timeout \\ 5000) do
     case request(proxy, data, timeout) do
       {:ok, response} -> response
-
       {:error, reason} -> raise ROS.Service.Error, message: reason
     end
   end
@@ -102,13 +102,15 @@ defmodule ROS.Service.Proxy do
   end
 
   private do
-    @spec lookup_service(Keyword.t()) :: {:ok, String.t()} | {:error, :noservices}
+    @spec lookup_service(Keyword.t()) ::
+            {:ok, String.t()} | {:error, :noservices}
     defp lookup_service(proxy) do
       case ROS.MasterApi.lookup_service(proxy) do
         [1, _, uri] ->
           {:ok, uri}
 
-        _ -> {:error, :noservices}
+        _ ->
+          {:error, :noservices}
       end
     end
 
@@ -119,10 +121,16 @@ defmodule ROS.Service.Proxy do
       # connect to the host blocking-ly
       host
       |> String.to_charlist()
-      |> :gen_tcp.connect(port, [:binary, packet: 0, reuseaddr: true, active: false])
+      |> :gen_tcp.connect(port, [
+        :binary,
+        packet: 0,
+        reuseaddr: true,
+        active: false
+      ])
     end
 
-    @spec accept(:gen_tcp.socket()) :: {:ok, :gen_tcp.socket()} | {:error, atom()}
+    @spec accept(:gen_tcp.socket()) ::
+            {:ok, :gen_tcp.socket()} | {:error, atom()}
     defp accept(socket) do
       :gen_tcp.accept(socket)
     end
@@ -132,7 +140,8 @@ defmodule ROS.Service.Proxy do
       :gen_tcp.recv(socket, 0)
     end
 
-    @spec get_conn_header(:gen_tcp.socket()) :: {:ok, %ConnHead{}} | {:error, atom()}
+    @spec get_conn_header(:gen_tcp.socket()) ::
+            {:ok, %ConnHead{}} | {:error, atom()}
     defp get_conn_header(socket) do
       case read_line(socket) do
         {:ok, recv} -> {:ok, ConnHead.parse(recv)}
@@ -145,7 +154,8 @@ defmodule ROS.Service.Proxy do
       :gen_tcp.send(socket, line)
     end
 
-    @spec send_conn_header(:gen_tcp.socket(), Keyword.t()) :: :ok | {:error, atom()}
+    @spec send_conn_header(:gen_tcp.socket(), Keyword.t()) ::
+            :ok | {:error, atom()}
     defp send_conn_header(socket, proxy) do
       message =
         proxy

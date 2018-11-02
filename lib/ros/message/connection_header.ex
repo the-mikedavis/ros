@@ -70,7 +70,14 @@ defmodule ROS.Message.ConnectionHeader do
   @spec from(Keyword.t()) :: %__MODULE__{}
   def from(opts) do
     type = ROS.Message.module(opts[:type])
-    kwlist = [type: type, md5sum: type.md5sum(), message_definition: type.definition(), callerid: Atom.to_string(opts[:node_name])] ++ opts
+
+    kwlist =
+      [
+        type: type,
+        md5sum: type.md5sum(),
+        message_definition: type.definition(),
+        callerid: Atom.to_string(opts[:node_name])
+      ] ++ opts
 
     struct(__MODULE__, kwlist)
   end

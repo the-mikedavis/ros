@@ -99,6 +99,7 @@ defmodule ROS.Message do
   def deserialize_take(binary, type) when is_binary(type) do
     deserialize_take(binary, type_to_module(type))
   end
+
   def deserialize_take(binary, type_module) do
     {parsed_kw_list, rest} = _parse_take(binary, type_module.types(), [])
 
@@ -120,9 +121,11 @@ defmodule ROS.Message do
   private do
     @spec _serialize([{atom(), atom()}], binary(), struct()) :: binary()
     defp _serialize([], acc, _), do: pack_string(acc)
+
     defp _serialize([{name, :string} | other_types], acc, msg) do
       _serialize(other_types, acc <> pack_string(Map.get(msg, name)), msg)
     end
+
     defp _serialize([{name, type} | other_types], acc, msg) do
       type_string = Atom.to_string(type)
 
@@ -179,7 +182,8 @@ defmodule ROS.Message do
     end
 
     # a tail recursive parser used by `deserialize/2`
-    @spec _parse_take(binary(), [{atom(), atom()}], [any()]) :: {any(), binary()}
+    @spec _parse_take(binary(), [{atom(), atom()}], [any()]) ::
+            {any(), binary()}
     def _parse_take(<<>>, _types, acc), do: {acc, <<>>}
     def _parse_take(binary, [], acc), do: {acc, binary}
 
@@ -231,6 +235,7 @@ defmodule ROS.Message do
     end
 
     defp unpack_take_list(binary, _type, 0, acc), do: {acc, binary}
+
     defp unpack_take_list(binary, type, n, acc) do
       {value, rest} = Satchel.unpack_take(binary, type)
 
@@ -243,7 +248,9 @@ defmodule ROS.Message do
 
       deserialize_take_list(rest, type, list_length, [])
     end
+
     defp deserialize_take_list(binary, _type, 0, acc), do: {acc, binary}
+
     defp deserialize_take_list(binary, type, n, acc) do
       {value, rest} = deserialize_take(binary, type)
 

@@ -43,6 +43,7 @@ defmodule ROS.Service do
     # e.g. "rospy_tutorials/AddTwoInts" -> RospyTutorials.AddTwoInts
     deserialize_request(data, ROS.Message.module(type))
   end
+
   def deserialize_request(data, type) do
     # get the Request submodule
     type = Module.concat(type, Request)
@@ -52,10 +53,12 @@ defmodule ROS.Service do
   end
 
   @doc false
-  @spec deserialize_response(binary(), binary() | module()) :: {:ok, struct()} | {:error, String.t()}
+  @spec deserialize_response(binary(), binary() | module()) ::
+          {:ok, struct()} | {:error, String.t()}
   def deserialize_response(data, type) when is_binary(type) do
     deserialize_response(data, ROS.Message.module(type))
   end
+
   def deserialize_response(data, type) do
     {status_code, rest} = Satchel.unpack_take(data, :uint8)
 
@@ -65,7 +68,8 @@ defmodule ROS.Service do
 
         {:ok, ROS.Message.deserialize(rest, type)}
 
-      0 -> {:error, Bite.drop(rest, 4)}
+      0 ->
+        {:error, Bite.drop(rest, 4)}
     end
   end
 
@@ -111,7 +115,10 @@ defmodule ROS.Service do
   @impl GenServer
   # handle the first message through the pipe. this is always the connection
   # header (or the probe message, which is a type of connection header)
-  def handle_info({:tcp, socket, packet}, %{init: true, service: service} = state) do
+  def handle_info(
+        {:tcp, socket, packet},
+        %{init: true, service: service} = state
+      ) do
     partial(packet, state, fn full_message ->
       case ConnHead.parse(full_message) do
         %{probe: true} ->
@@ -147,6 +154,7 @@ defmodule ROS.Service do
 
           # return the error struct
           e
+
         e ->
           # make sure to log the error
           Logger.error(fn -> "Error in service call!\n#{inspect(e)}" end)
@@ -190,7 +198,13 @@ defmodule ROS.Service do
       # - `active: true` makes it so `:gen_tcp.recv` can't be called. all tcp
       # messages come in as `info` messages to the GenServer
       # - `reuseaddr: true` allow re-accepting on the same port
-      {:ok, socket} = :gen_tcp.listen(port, [:binary, packet: 0, active: true, reuseaddr: true])
+      {:ok, socket} =
+        :gen_tcp.listen(port, [
+          :binary,
+          packet: 0,
+          active: true,
+          reuseaddr: true
+        ])
 
       # reroute all tcp info messages to this GenServer process
       :ok = :gen_tcp.controlling_process(socket, self())
@@ -207,7 +221,8 @@ defmodule ROS.Service do
     end
 
     # create and send a serialized connection header given a service
-    @spec send_conn_header(:gen_tcp.socket(), Keyword.t()) :: :ok | {:error, atom()}
+    @spec send_conn_header(:gen_tcp.socket(), Keyword.t()) ::
+            :ok | {:error, atom()}
     defp send_conn_header(socket, service) do
       service
       |> ConnHead.from()
