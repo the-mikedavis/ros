@@ -1,5 +1,6 @@
 defmodule ROS.Message.ConnectionHeader do
   use Private
+  alias ROS.Helpers
 
   @moduledoc """
   Connection Headers proceed messages and provides a standard format
@@ -61,7 +62,7 @@ defmodule ROS.Message.ConnectionHeader do
   end
 
   def serialize(%__MODULE__{type: type} = conn_header) when is_atom(type) do
-    serialize(%__MODULE__{conn_header | type: ROS.Message.type(type)})
+    serialize(%__MODULE__{conn_header | type: Helpers.type(type)})
   end
 
   @doc """
@@ -69,7 +70,7 @@ defmodule ROS.Message.ConnectionHeader do
   """
   @spec from(Keyword.t()) :: %__MODULE__{}
   def from(opts) do
-    type = ROS.Message.module(opts[:type])
+    type = Helpers.module(opts[:type])
 
     kwlist =
       [

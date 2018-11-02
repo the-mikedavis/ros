@@ -89,7 +89,7 @@ defmodule ROS.Service.Proxy do
       with {:ok, uri} <- lookup_service(proxy),
            {:ok, socket} <- connect(uri),
            :ok <- send_conn_header(socket, proxy),
-           {:ok, conn_head} <- get_conn_header(socket),
+           {:ok, _conn_head} <- get_conn_header(socket),
            request <- ROS.Message.serialize(data),
            :ok <- send_line(socket, request),
            {:ok, raw_response} <- read_line(socket) do
@@ -127,12 +127,6 @@ defmodule ROS.Service.Proxy do
         reuseaddr: true,
         active: false
       ])
-    end
-
-    @spec accept(:gen_tcp.socket()) ::
-            {:ok, :gen_tcp.socket()} | {:error, atom()}
-    defp accept(socket) do
-      :gen_tcp.accept(socket)
     end
 
     @spec read_line(:gen_tcp.socket()) :: {:ok, binary()} | {:error, atom()}

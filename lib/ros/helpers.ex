@@ -67,7 +67,7 @@ defmodule ROS.Helpers do
   def module(type) when is_binary(type), do: type_to_module(type)
 
   @spec module_to_type(atom()) :: String.t()
-  defp module_to_type(mod) when is_atom(mod) do
+  def module_to_type(mod) when is_atom(mod) do
     [tail | rest] =
       mod
       |> Module.split()
@@ -79,12 +79,19 @@ defmodule ROS.Helpers do
   end
 
   @spec type_to_module(String.t()) :: atom()
-  defp type_to_module(type) when is_binary(type) do
+  def type_to_module(type) when is_binary(type) do
     type
     |> String.split("/")
     |> Enum.map(&Macro.camelize/1)
     |> List.insert_at(0, "Elixir")
     |> Enum.join(".")
     |> String.to_atom()
+  end
+
+  @spec underscore(String.t()) :: [String.t()]
+  def underscore(module) do
+    module
+    |> String.split("/")
+    |> Enum.map(&Macro.underscore/1)
   end
 end

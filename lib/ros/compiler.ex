@@ -29,7 +29,7 @@ defmodule ROS.Compiler do
     {parsed, constant_definitions} =
       definition
       |> prepare_definition()
-      |> Enum.map(&parse/1)
+      |> Enum.map(&parse_line/1)
       |> Enum.map(&cleanse/1)
       |> parse_constants()
 

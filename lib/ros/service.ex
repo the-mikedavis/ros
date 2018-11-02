@@ -3,8 +3,9 @@ defmodule ROS.Service do
   use Private
   require Logger
 
-  import ROS.Helpers
+  import ROS.Helpers, only: [pack_string: 1, partial: 3]
   alias ROS.Message.ConnectionHeader, as: ConnHead
+  alias ROS.Helpers
 
   @moduledoc """
   Services allow you to handle synchronous requests.
@@ -41,7 +42,7 @@ defmodule ROS.Service do
   def deserialize_request(data, type) when is_binary(type) do
     # make sure the type parameter is a module
     # e.g. "rospy_tutorials/AddTwoInts" -> RospyTutorials.AddTwoInts
-    deserialize_request(data, ROS.Message.module(type))
+    deserialize_request(data, Helpers.module(type))
   end
 
   def deserialize_request(data, type) do
@@ -56,7 +57,7 @@ defmodule ROS.Service do
   @spec deserialize_response(binary(), binary() | module()) ::
           {:ok, struct()} | {:error, String.t()}
   def deserialize_response(data, type) when is_binary(type) do
-    deserialize_response(data, ROS.Message.module(type))
+    deserialize_response(data, Helpers.module(type))
   end
 
   def deserialize_response(data, type) do
