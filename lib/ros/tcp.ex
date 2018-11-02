@@ -4,29 +4,7 @@ defmodule ROS.TCP do
   require Logger
 
   alias ROS.Message.ConnectionHeader, as: ConnHead
-
-  # executes a `do` block once a full packet has been received; if it has
-  # not been fully received, wait until the next call
-  #
-  # the do block must return `state`
-  defmacrop partial(packet, state, callback) do
-    quote do
-      partial = Map.get(unquote(state), :partial, "")
-      packet = partial <> unquote(packet)
-
-      state =
-        if partial?(packet) do
-          Map.put(unquote(state), :partial, packet)
-        else
-          {_size, full_message} = Satchel.unpack_take(packet, :uint32)
-
-          unquote(callback).(full_message)
-          |> Map.delete(:partial)
-        end
-
-      {:noreply, state}
-    end
-  end
+  import ROS.Helpers, only: [partial: 3]
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args)
@@ -135,13 +113,6 @@ defmodule ROS.TCP do
       psub
       |> ConnHead.from()
       |> ConnHead.serialize()
-    end
-
-    # determines if a packet is not the whole message
-    defp partial?(packet) do
-      {len, rest} = Satchel.unpack_take(packet, :uint32)
-
-      String.length(rest) < len
     end
   end
 end
