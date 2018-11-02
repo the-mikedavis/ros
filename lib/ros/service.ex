@@ -98,10 +98,10 @@ defmodule ROS.Service do
   @impl GenServer
   # `:gen_tcp.accept/1` blocks until something connects to the socket, so this
   # needs to be a cast
-  def handle_cast({:accept, socket}, %{service: service} = state) do
+  def handle_cast({:accept, socket}, state) do
     # don't save this in the :socket key of state
     # this allows us to reuse that socket, which is from `:gen_tcp.listen/2`
-    {:ok, socket} = :gen_tcp.accept(socket)
+    {:ok, _socket} = :gen_tcp.accept(socket)
 
     # put the :init key so that we can catch the connection header and treat
     # it differently from general request messages
@@ -174,7 +174,7 @@ defmodule ROS.Service do
   # from the call to `:gen_tcp.listen/2` and can be re-accepted to start a
   # new tcp accepting routine.
   def handle_info({:tcp_closed, _socket}, %{socket: socket} = state) do
-    GenServer.cast(self, {:accept, socket})
+    GenServer.cast(self(), {:accept, socket})
 
     {:noreply, state}
   end
