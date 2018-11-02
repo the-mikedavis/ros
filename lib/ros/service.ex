@@ -151,7 +151,8 @@ defmodule ROS.Service do
           # make sure to log the error
           Logger.error(fn -> "Error in service call!\n#{inspect(e)}" end)
 
-          # 
+          # return the error struct normalized to a ros service error
+          # makes parsing easier
           %ROS.Service.Error{message: to_string(e)}
       end
       |> ROS.Service.serialize()
