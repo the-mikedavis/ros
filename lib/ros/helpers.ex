@@ -41,4 +41,50 @@ defmodule ROS.Helpers do
 
     len_field <> str
   end
+
+  @doc """
+  Translates from the module-ized Elixir struct name to the ROS type name.
+
+  ## Examples
+
+      iex> ROS.Message.type(StdMsgs.String)
+      "std_msgs/String"
+  """
+  @spec type(String.t() | atom()) :: String.t()
+  def type(type) when is_binary(type), do: type
+  def type(mod) when is_atom(mod), do: module_to_type(mod)
+
+  @doc """
+  Translates from the ROS type name to the module-ized Elixir struct name.
+
+  ## Examples
+
+      iex> ROS.Message.module("std_msgs/String")
+      StdMsgs.String
+  """
+  @spec module(atom() | String.t()) :: atom()
+  def module(mod) when is_atom(mod), do: mod
+  def module(type) when is_binary(type), do: type_to_module(type)
+
+  @spec module_to_type(atom()) :: String.t()
+  defp module_to_type(mod) when is_atom(mod) do
+    [tail | rest] =
+      mod
+      |> Module.split()
+      |> Enum.reverse()
+
+    [tail | Enum.map(rest, &Macro.underscore/1)]
+    |> Enum.reverse()
+    |> Enum.join("/")
+  end
+
+  @spec type_to_module(String.t()) :: atom()
+  defp type_to_module(type) when is_binary(type) do
+    type
+    |> String.split("/")
+    |> Enum.map(&Macro.camelize/1)
+    |> List.insert_at(0, "Elixir")
+    |> Enum.join(".")
+    |> String.to_atom()
+  end
 end

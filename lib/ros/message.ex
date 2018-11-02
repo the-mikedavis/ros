@@ -1,7 +1,8 @@
 defmodule ROS.Message do
   use Private
 
-  import ROS.Helpers, only: [pack_string: 1]
+  alias ROS.Helpers
+  import Helpers, only: [pack_string: 1]
 
   @moduledoc """
   Logic and helper functions for handling ROS messages sent between nodes.
@@ -50,30 +51,6 @@ defmodule ROS.Message do
   end
 
   @doc """
-  Translates from the module-ized Elixir struct name to the ROS type name.
-
-  ## Examples
-
-      iex> ROS.Message.type(StdMsgs.String)
-      "std_msgs/String"
-  """
-  @spec type(String.t() | atom()) :: String.t()
-  def type(type) when is_binary(type), do: type
-  def type(mod) when is_atom(mod), do: module_to_type(mod)
-
-  @doc """
-  Translates from the ROS type name to the module-ized Elixir struct name.
-
-  ## Examples
-
-      iex> ROS.Message.module("std_msgs/String")
-      StdMsgs.String
-  """
-  @spec module(atom() | String.t()) :: atom()
-  def module(mod) when is_atom(mod), do: mod
-  def module(type) when is_binary(type), do: type_to_module(type)
-
-  @doc """
   Deserialize a binary message from a publisher into an Elixir struct.
 
   ## Examples
@@ -86,7 +63,7 @@ defmodule ROS.Message do
   """
   @spec deserialize(binary(), module() | String.t()) :: struct()
   def deserialize(binary, type_module) when is_binary(type_module) do
-    deserialize(binary, type_to_module(type_module))
+    deserialize(binary, Helpers.type_to_module(type_module))
   end
 
   def deserialize(binary, type_module) do
@@ -97,7 +74,7 @@ defmodule ROS.Message do
 
   @spec deserialize_take(binary(), module() | binary()) :: {struct(), binary()}
   def deserialize_take(binary, type) when is_binary(type) do
-    deserialize_take(binary, type_to_module(type))
+    deserialize_take(binary, Helpers.type_to_module(type))
   end
 
   def deserialize_take(binary, type_module) do
@@ -157,28 +134,6 @@ defmodule ROS.Message do
         |> Enum.join("")
 
       serialized_length <> serialized_list
-    end
-
-    @spec module_to_type(atom()) :: String.t()
-    defp module_to_type(mod) when is_atom(mod) do
-      [tail | rest] =
-        mod
-        |> Module.split()
-        |> Enum.reverse()
-
-      [tail | Enum.map(rest, &Macro.underscore/1)]
-      |> Enum.reverse()
-      |> Enum.join("/")
-    end
-
-    @spec type_to_module(String.t()) :: atom()
-    defp type_to_module(type) when is_binary(type) do
-      type
-      |> String.split("/")
-      |> Enum.map(&Macro.camelize/1)
-      |> List.insert_at(0, "Elixir")
-      |> Enum.join(".")
-      |> String.to_atom()
     end
 
     # a tail recursive parser used by `deserialize/2`
