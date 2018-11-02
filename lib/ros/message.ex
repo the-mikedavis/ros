@@ -90,10 +90,7 @@ defmodule ROS.Message do
   end
 
   def deserialize(binary, type_module) do
-    # TODO: do this in the tcp module
-    {innards, _left_overs} = split_once(binary)
-
-    {parsed_kw_list, _rest} = _parse_take(innards, type_module.types(), [])
+    {parsed_kw_list, _rest} = _parse_take(binary, type_module.types(), [])
 
     struct(type_module, parsed_kw_list)
   end
