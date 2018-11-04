@@ -85,8 +85,9 @@ defmodule ROS.Node do
       |> Enum.join(".")
     end
 
-    @spec inform({module(), struct()}, atom(), {String.t(), pos_integer()}) ::
-            [{module(), Keyword.t()}]
+    @spec inform({module(), struct()}, atom(), {String.t(), pos_integer()}) :: [
+            {module(), Keyword.t()}
+          ]
     defp inform({type, child}, name, uri) do
       {type, %{child | node_name: name, uri: uri}}
     end
