@@ -1,19 +1,25 @@
 defmodule MyRosProject.Application do
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
   @moduledoc false
+
+  import ROS.Node.Spec
 
   use Application
 
   def start(_type, _args) do
-    # List all child processes to be supervised
+    add_two_ints = fn %RospyTutorials.AddTwoInts.Request{a: a, b: b} ->
+      Logger.debug(fn -> "[#{a} + #{b} = #{a + b}]" end)
+      %RospyTutorials.AddTwoInts.Response{sum: a + b}
+    end
+
     children = [
-      # Starts a worker by calling: MyRosProject.Worker.start_link(arg)
-      # {MyRosProject.Worker, arg},
+      node(:"/mynode", [
+        publisher(:talker, "/other_chatter", "std_msgs/Int16")
+        subscriber("/chatter", "std_msgs/Int32MultiArray", &IO.inspect/1)
+        service_proxy(:proximus, "/add_two_ints", "rospy_tutorials/AddTwoInts")
+        service("/add_two_ints", "rospy_tutorials/AddTwoInts", add_two_ints)
+      ])
     ]
 
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: MyRosProject.Supervisor]
     Supervisor.start_link(children, opts)
   end

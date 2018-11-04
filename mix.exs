@@ -17,16 +17,12 @@ defmodule ROS.MixProject do
         bless: :test
       ],
       test_coverage: [tool: ExCoveralls],
-      aliases: aliases(),
-      msg: messages(),
-      srv: srvs()
+      aliases: aliases()
     ]
   end
 
   def application do
     [
-      # TODO: remove
-      mod: {ROS.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -64,23 +60,11 @@ defmodule ROS.MixProject do
       {"dialyzer", []}
     ]
     |> Enum.each(fn {task, args} ->
-      IO.ANSI.format([:cyan, "Running #{task} with args #{inspect(args)}"])
+      [:cyan, "Running #{task} with args #{inspect(args)}"]
+      |> IO.ANSI.format()
       |> IO.puts()
 
       Mix.Task.run(task, args)
     end)
-  end
-
-  defp messages do
-    [
-      {:pattern, "std_msgs"},
-      "sensor_msgs/Image"
-    ]
-  end
-
-  defp srvs do
-    [
-      {:pattern, "rospy_tutorials"}
-    ]
   end
 end
