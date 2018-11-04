@@ -8,18 +8,18 @@ defmodule ROS.Application do
   import ROS.Node.Spec
 
   def start(_type, _args) do
-    add_two_ints = fn %RospyTutorials.AddTwoInts.Request{a: a, b: b} ->
-      Logger.debug(fn -> "[#{a} + #{b} = #{a + b}]" end)
-
-      %RospyTutorials.AddTwoInts.Response{sum: a + b}
-    end
+    # add_two_ints = fn %RospyTutorials.AddTwoInts.Request{a: a, b: b} ->
+    # Logger.debug(fn -> "[#{a} + #{b} = #{a + b}]" end)
+    #
+    # %RospyTutorials.AddTwoInts.Response{sum: a + b}
+    # end
 
     children = [
       # node(:"/mynode", [publisher(:talker, "/chatter", "std_msgs/Int16")])
       node(:"/mynode", [
-        # subscriber("/chatter", "std_msgs/Int32MultiArray", &IO.inspect/1)
+        subscriber("/chatter", "std_msgs/Int32MultiArray", &IO.inspect/1)
         # service_proxy(:proximus, "/add_two_ints", "rospy_tutorials/AddTwoInts")
-        service("/add_two_ints", "rospy_tutorials/AddTwoInts", add_two_ints)
+        # service("/add_two_ints", "rospy_tutorials/AddTwoInts", add_two_ints)
       ])
     ]
 

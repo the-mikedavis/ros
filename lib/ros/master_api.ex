@@ -15,6 +15,10 @@ defmodule ROS.MasterApi do
     make_call("lookupService", ["http://#{ip}:#{port}", opts[:service]])
   end
 
+  def request_topic(callerid, topic, transport, target) do
+    make_call("requestTopic", [callerid, topic, transport], target)
+  end
+
   def register_service(service, service_port) do
     {ip, port} = service[:uri]
 
@@ -48,10 +52,8 @@ defmodule ROS.MasterApi do
     ])
   end
 
-  defp make_call(name, args) do
-    call =
-      ROS.SlaveApi.master_uri()
-      |> Xenium.call!(name, args)
+  defp make_call(name, args, target \\ ROS.SlaveApi.master_uri()) do
+    call = Xenium.call!(target, name, args)
 
     call
     |> inspect()

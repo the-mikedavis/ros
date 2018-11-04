@@ -62,6 +62,7 @@ defmodule ROS.SlaveApi do
         %{local_pubs: pubs, uri: {ip, _}} = state
       ) do
     port =
+      # get the first pub that has this topic and call its connect function
       pubs
       |> Enum.find_value(fn {pub_topic, opts} ->
         pub_topic == topic && opts

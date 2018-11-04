@@ -8,6 +8,11 @@ defmodule ROS.TCP do
   alias ROS.Message.ConnectionHeader, as: ConnHead
   import ROS.Helpers, only: [partial: 3]
 
+  @spec send(any(), :gen_tcp.socket()) :: :ok
+  def send(data, socket) do
+    :gen_tcp.send(socket, data)
+  end
+
   def start_link(args) do
     GenServer.start_link(__MODULE__, args)
   end
@@ -79,17 +84,6 @@ defmodule ROS.TCP do
       |> IO.inspect(label: "incoming connection header", limit: :infinity)
 
       Map.delete(state, :init)
-    end)
-  end
-
-  # for subscribers, send the connection header and then get data
-  def handle_info({:tcp, _socket, packet}, %{sub: sub} = state) do
-    partial(packet, state, fn _ ->
-      packet
-      |> ROS.Message.deserialize(sub[:type])
-      |> sub[:callback].()
-
-      state
     end)
   end
 
