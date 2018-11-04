@@ -16,8 +16,9 @@ defmodule ROS.Subscriber do
   #
   # called by the slave_api when master gives us a message that there's someone
   # new publishing the topic
-  @spec request(%ROS.Subscriber{}, atom(), String.t(), String.t(), [[String.t()]]) ::
-          :ok
+  @spec request(%ROS.Subscriber{}, atom(), String.t(), String.t(), [
+          [String.t()]
+        ]) :: :ok
   def request(sub, node_name, topic, publisher, transport) do
     sub
     |> NodeName.of()
@@ -67,6 +68,7 @@ defmodule ROS.Subscriber do
     partial(packet, state, fn full_message ->
       full_message
       |> ROS.Message.ConnectionHeader.parse()
+
       # TODO do something with the connection header, like checking the md5sum
 
       Map.delete(state, :init)
@@ -141,7 +143,11 @@ defmodule ROS.Subscriber do
 
         # try again in 1 second if they said no.
         _ ->
-          Process.send_after(self(), {:request, [node_name, topic, transport, publisher]}, 1_000)
+          Process.send_after(
+            self(),
+            {:request, [node_name, topic, transport, publisher]},
+            1_000
+          )
       end
     end
 
@@ -158,11 +164,13 @@ defmodule ROS.Subscriber do
           |> Enum.map(fn [_topic, topic_pubs] -> List.first(topic_pubs) end)
           |> subscribe_to(sub)
 
-        _ -> :ok
+        _ ->
+          :ok
       end
     end
 
     defp subscribe_to([], _sub), do: :ok
+
     defp subscribe_to([pub_name | _], sub) do
       sub
       |> NodeName.of()

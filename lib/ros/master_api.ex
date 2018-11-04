@@ -68,7 +68,10 @@ defmodule ROS.MasterApi do
   end
 
   defp make_call(name, args, target \\ ROS.SlaveApi.master_uri()) do
-    Logger.debug(fn -> "Requesting: [\"#{name}\", #{inspect(args)}] from #{target}" end)
+    Logger.debug(fn ->
+      "Requesting: [\"#{name}\", #{inspect(args)}] from #{target}"
+    end)
+
     call =
       try do
         Xenium.call!(target, name, args)

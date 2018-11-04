@@ -11,19 +11,23 @@ defmodule ROS.Node.Spec do
   end
 
   @spec subscriber(String.t(), String.t() | module(), (struct() -> any())) ::
-    {module(), %ROS.Subscriber{}}
+          {module(), %ROS.Subscriber{}}
   def subscriber(topic, type, callback) do
-    {ROS.Subscriber, %ROS.Subscriber{topic: topic, type: type, callback: callback}}
+    {ROS.Subscriber,
+     %ROS.Subscriber{topic: topic, type: type, callback: callback}}
   end
 
   @spec service_proxy(atom(), String.t(), String.t() | module()) ::
           {module(), %ROS.Service.Proxy{}}
   def service_proxy(name, service, type) do
-    {ROS.Service.Proxy, %ROS.Service.Proxy{name: name, service: service, type: type}}
+    {ROS.Service.Proxy,
+     %ROS.Service.Proxy{name: name, service: service, type: type}}
   end
 
-  @spec service(String.t(), String.t() | module(), (struct() -> any())) :: {module(), %ROS.Service{}}
+  @spec service(String.t(), String.t() | module(), (struct() -> any())) ::
+          {module(), %ROS.Service{}}
   def service(service, type, callback) do
-    {ROS.Service, %ROS.Service{service: service, type: type, callback: callback}}
+    {ROS.Service,
+     %ROS.Service{service: service, type: type, callback: callback}}
   end
 end

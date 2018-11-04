@@ -28,7 +28,9 @@ defmodule ROS.Node do
         {:_, [{:_, __MODULE__, [NodeName.of(server)]}]}
       ])
 
-    Supervisor.start_link(__MODULE__, {ros_node, server, dispatch}, name: ros_node.name)
+    Supervisor.start_link(__MODULE__, {ros_node, server, dispatch},
+      name: ros_node.name
+    )
   end
 
   @impl Supervisor
@@ -40,7 +42,11 @@ defmodule ROS.Node do
 
     children = Enum.map(ros_node.children, &inform(&1, ros_node.name, uri))
 
-    [{ROS.SlaveApi, %ROS.SlaveApi{node_name: ros_node.name, children: children, uri: uri}} | children]
+    [
+      {ROS.SlaveApi,
+       %ROS.SlaveApi{node_name: ros_node.name, children: children, uri: uri}}
+      | children
+    ]
     |> Supervisor.init(strategy: :one_for_one)
   end
 
@@ -79,8 +85,8 @@ defmodule ROS.Node do
       |> Enum.join(".")
     end
 
-    @spec inform({module(), struct()}, atom(), {String.t(), pos_integer()})
-          :: [{module(), Keyword.t()}]
+    @spec inform({module(), struct()}, atom(), {String.t(), pos_integer()}) ::
+            [{module(), Keyword.t()}]
     defp inform({type, child}, name, uri) do
       {type, %{child | node_name: name, uri: uri}}
     end

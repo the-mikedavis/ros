@@ -90,7 +90,6 @@ defmodule ROS.Message.ConnectionHeader do
     defp topic_or_service(%{topic: topic}), do: {:topic, topic}
     defp topic_or_service(%{service: service}), do: {:service, service}
 
-
     # these are hard-coded because i don't wanna deal with parsing bits
     # as booleans, and no one uses bits as booleans in elixir (because
     # 0 is not falsey)

@@ -68,6 +68,7 @@ defmodule ROS.TCP do
     partial(packet, state, fn full_message ->
       full_message
       |> ROS.Message.ConnectionHeader.parse()
+
       # TODO do something with the connection header, like checking the md5sum
 
       Map.delete(state, :init)

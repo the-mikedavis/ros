@@ -58,8 +58,8 @@ defmodule ROS.SlaveApi do
         _from,
         %{local_pubs: pubs, slave_api: %{uri: {ip, _port}}} = state
       ) do
+    # get the first pub that has this topic and call its connect function
     port =
-      # get the first pub that has this topic and call its connect function
       pubs
       |> Enum.find_value(fn {pub_topic, pub} ->
         pub_topic == topic && pub
