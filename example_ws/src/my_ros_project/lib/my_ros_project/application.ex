@@ -17,7 +17,7 @@ defmodule MyRosProject.Application do
       node(:"/mynode", [
         publisher(:talker, "/other_chatter", "std_msgs/Int16"),
         subscriber("/chatter", "std_msgs/Int32MultiArray", &IO.inspect/1),
-        service_proxy(:proximus, "/add_two_ints", "rospy_tutorials/AddTwoInts"),
+        service_proxy(:myproxy, "/add_two_ints", "rospy_tutorials/AddTwoInts"),
         service("/add_two_ints", "rospy_tutorials/AddTwoInts", add_two_ints)
       ])
     ]

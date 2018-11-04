@@ -5,7 +5,8 @@ defmodule ROS.TCP do
   @moduledoc false
 
   alias ROS.Message.ConnectionHeader, as: ConnHead
-  import ROS.Helpers, only: [partial: 3]
+  alias ROS.Helpers
+  import Helpers, only: [partial: 3]
   import Elixir.Kernel, except: [send: 2]
 
   # send a message on a socket
@@ -57,8 +58,10 @@ defmodule ROS.TCP do
     {:noreply, Map.put(state, :socket, socket)}
   end
 
-  def handle_cast({:send, data}, %{socket: socket} = state) do
-    send(data, socket)
+  def handle_cast({:send, data}, %{socket: socket, pub: pub} = state) do
+    data
+    |> Helpers.force_type(Helpers.module(pub.type))
+    |> send(socket)
 
     {:noreply, state}
   end

@@ -105,4 +105,8 @@ defmodule ROS.Helpers do
     |> String.split("/")
     |> Enum.map(&Macro.underscore/1)
   end
+
+  @spec force_type(struct() | map(), module()) :: struct()
+  def force_type(%type{} = data, type), do: data
+  def force_type(%{} = data, type), do: struct(type, data)
 end

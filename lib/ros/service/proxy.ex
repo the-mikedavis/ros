@@ -4,7 +4,7 @@ defmodule ROS.Service.Proxy do
   require Logger
 
   alias ROS.Message.ConnectionHeader, as: ConnHead
-  alias ROS.TCP, as: TCP
+  alias ROS.{Helpers, TCP}
 
   @moduledoc """
   Service Proxies allow you to make requests to services.
@@ -38,7 +38,7 @@ defmodule ROS.Service.Proxy do
       iex> SrvPrx.request(:myproxy, %RospyTutorials.AddTwoInts.Request{a: 3, b: 4))
       {:ok, %RospyTutorials.AddTwoInts.Response{sum: 7}}
   """
-  @spec request(atom(), struct(), non_neg_integer()) ::
+  @spec request(atom(), struct() | map(), non_neg_integer()) ::
           {:ok, struct()} | {:error, String.t()}
   def request(proxy, data, timeout \\ 5000),
     do: GenServer.call(proxy, {:request, data}, timeout)
@@ -56,7 +56,7 @@ defmodule ROS.Service.Proxy do
       iex> SrvPrx.request!(:ididntmakethisserviceproxy, %StdSrv.Empty{})
       (** ROS.Service.Error) ...
   """
-  @spec request!(atom(), struct(), non_neg_integer()) :: struct() | no_return()
+  @spec request!(atom(), struct() | map(), non_neg_integer()) :: struct() | no_return()
   def request!(proxy, data, timeout \\ 5000) do
     case request(proxy, data, timeout) do
       {:ok, response} -> response
@@ -87,8 +87,10 @@ defmodule ROS.Service.Proxy do
            {:ok, socket} <- connect(uri),
            :ok <- send_conn_header(socket, proxy),
            {:ok, _conn_head} <- get_conn_header(socket),
-           request <- ROS.Message.serialize(data),
-           :ok <- send_line(socket, request),
+           request_module <- proxy.type |> Helpers.module() |> Module.concat(Request),
+           typed_data <- Helpers.force_type(data, request_module),
+           request <- ROS.Message.serialize(typed_data),
+           :ok <- TCP.send(request, socket),
            {:ok, raw_response} <- read_line(socket) do
         ROS.Service.deserialize_response(raw_response, proxy.type)
       else
@@ -138,11 +140,6 @@ defmodule ROS.Service.Proxy do
         {:ok, recv} -> {:ok, ConnHead.parse(recv)}
         e -> e
       end
-    end
-
-    @spec send_line(:gen_tcp.socket(), binary()) :: :ok | {:error, atom()}
-    defp send_line(socket, line) do
-      :gen_tcp.send(socket, line)
     end
 
     @spec send_conn_header(:gen_tcp.socket(), %ROS.Service.Proxy{}) ::

@@ -164,7 +164,7 @@ defmodule ROS.Service do
           # makes parsing easier
           %ROS.Service.Error{message: to_string(e)}
       end
-      |> force_type(Helpers.module(service.type))
+      |> force_type(Module.concat(Helpers.module(service.type), Response))
       |> ROS.Service.serialize()
       |> TCP.send(socket)
 
