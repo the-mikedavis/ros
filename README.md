@@ -63,7 +63,7 @@ Supervisor.start_link(children, strategy: :one_for_one)
 
 ## Example Service Proxy
 
-```
+```elixir
 use ROS
 
 children = [
