@@ -5,6 +5,7 @@ defmodule ROS.Service do
 
   import ROS.Helpers, only: [pack_string: 1, partial: 3]
   alias ROS.Message.ConnectionHeader, as: ConnHead
+  alias ROS.TCP
   alias ROS.Helpers
 
   @moduledoc """
@@ -163,8 +164,9 @@ defmodule ROS.Service do
           # makes parsing easier
           %ROS.Service.Error{message: to_string(e)}
       end
+      |> force_type(Helpers.module(service.type))
       |> ROS.Service.serialize()
-      |> send_line(socket)
+      |> TCP.send(socket)
 
       state
     end)
@@ -227,12 +229,12 @@ defmodule ROS.Service do
       service
       |> ConnHead.from()
       |> ConnHead.serialize()
-      |> send_line(socket)
+      |> TCP.send(socket)
     end
 
-    # send a packet of binary data out of a socket
-    @spec send_line(binary(), :gen_tcp.socket()) :: :ok | {:error, atom()}
-    defp send_line(data, socket), do: :gen_tcp.send(socket, data)
+    @spec force_type(struct() | map(), module()) :: struct()
+    defp force_type(%type{} = data, type), do: data
+    defp force_type(%{} = data, type), do: struct(type, data)
   end
 end
 

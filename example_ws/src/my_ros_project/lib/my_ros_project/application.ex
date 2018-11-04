@@ -7,9 +7,10 @@ defmodule MyRosProject.Application do
   use Application
 
   def start(_type, _args) do
-    add_two_ints = fn %RospyTutorials.AddTwoInts.Request{a: a, b: b} ->
+    add_two_ints = fn %{a: a, b: b} ->
       Logger.debug(fn -> "[#{a} + #{b} = #{a + b}]" end)
-      %RospyTutorials.AddTwoInts.Response{sum: a + b}
+
+      %{sum: a + b}
     end
 
     children = [
