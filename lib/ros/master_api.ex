@@ -73,15 +73,12 @@ defmodule ROS.MasterApi do
     end)
 
     call =
-      try do
-        Xenium.call!(target, name, args)
-      rescue
-        e in HTTPoison.Error ->
-          Logger.error(fn ->
-            "Error contacting ROS Master! Is `roscore` running?"
-          end)
+      case Xenium.call(target, name, args) do
+        {:error, reason} ->
+          raise "Error contacting ROS Master! Is `roscore` running? #{reason}"
 
-          raise e
+        response ->
+          response
       end
 
     call
