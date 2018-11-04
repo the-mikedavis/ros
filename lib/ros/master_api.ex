@@ -8,11 +8,26 @@ defmodule ROS.MasterApi do
   # Function names take their lowercase form. Don't use this module. It's only
   # meant to be used in the underlying calls to setup publishers, subscribers,
   # and services.
+  def lookup_node(caller_id \\ :noname, node_name) do
+    make_call("lookupNode", [Atom.to_string(caller_id), node_name])
+  end
 
   def lookup_service(opts) do
     {ip, port} = opts[:uri]
 
     make_call("lookupService", ["http://#{ip}:#{port}", opts[:service]])
+  end
+
+  def get_published_topics(caller_id \\ :noname, sub_graph \\ "/") do
+    make_call("getPublishedTopics", [Atom.to_string(caller_id), sub_graph])
+  end
+
+  def get_system_state(caller_id \\ :noname) do
+    make_call("getSystemState", [Atom.to_string(caller_id)])
+  end
+
+  def get_uri(caller_id \\ :noname) do
+    make_call("getUri", [Atom.to_string(caller_id)])
   end
 
   def request_topic(callerid, topic, transport, target) do
@@ -53,6 +68,7 @@ defmodule ROS.MasterApi do
   end
 
   defp make_call(name, args, target \\ ROS.SlaveApi.master_uri()) do
+    Logger.debug(fn -> "Requesting: [\"#{name}\", #{inspect(args)}] from #{target}" end)
     call = Xenium.call!(target, name, args)
 
     call

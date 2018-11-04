@@ -1,17 +1,27 @@
 defmodule ROS.TCP do
   use GenServer
-  use Private
   require Logger
 
   @moduledoc false
 
   alias ROS.Message.ConnectionHeader, as: ConnHead
   import ROS.Helpers, only: [partial: 3]
+  import Elixir.Kernel, except: [send: 2]
 
-  @spec send(any(), :gen_tcp.socket()) :: :ok
-  def send(data, socket) do
-    :gen_tcp.send(socket, data)
+  # send a message on a socket
+  #
+  # really just calls `:gen_tcp.send/2`, but is re-ordered to making piping
+  # easier.
+  @spec send(binary() | struct(), :gen_tcp.socket()) :: :ok
+  def send(data, socket) when is_binary(data), do: :gen_tcp.send(socket, data)
+
+  def send(%_struct_module{} = data, socket) do
+    data
+    |> ROS.Message.serialize()
+    |> send(socket)
   end
+
+  ## Server API
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args)
@@ -35,43 +45,20 @@ defmodule ROS.TCP do
   end
 
   @impl GenServer
-  def handle_cast({:connect, ip, port}, %{sub: sub} = state) do
-    ip_addr =
-      ip
-      |> String.split(".")
-      |> Enum.map(&String.to_integer/1)
-      |> List.to_tuple()
-
-    {:ok, socket} = :gen_tcp.connect(ip_addr, port, [:binary, packet: 0])
-
-    :ok = :gen_tcp.controlling_process(socket, self())
-
-    data = build_conn_header(sub)
-
-    GenServer.cast(self(), {:send, data})
-
-    {:noreply, Map.put(state, :socket, socket)}
-  end
-
   def handle_cast({:accept, port}, %{pub: pub} = state) do
     {:ok, socket} = :gen_tcp.accept(port)
 
-    data = build_conn_header(pub)
-
-    GenServer.cast(self(), {:send, data})
+    :ok =
+      pub
+      |> ConnHead.from()
+      |> ConnHead.serialize()
+      |> send(socket)
 
     {:noreply, Map.put(state, :socket, socket)}
   end
 
-  def handle_cast({:send, data}, %{socket: socket} = state)
-      when is_binary(data) do
-    :gen_tcp.send(socket, data)
-
-    {:noreply, state}
-  end
-
   def handle_cast({:send, data}, %{socket: socket} = state) do
-    :gen_tcp.send(socket, ROS.Message.serialize(data))
+    send(data, socket)
 
     {:noreply, state}
   end
@@ -81,34 +68,17 @@ defmodule ROS.TCP do
     partial(packet, state, fn full_message ->
       full_message
       |> ROS.Message.ConnectionHeader.parse()
-      |> IO.inspect(label: "incoming connection header", limit: :infinity)
+      # TODO do something with the connection header, like checking the md5sum
 
       Map.delete(state, :init)
     end)
   end
 
-  # for publishers, parse the connection header
-  def handle_info({:tcp, _socket, packet}, state) do
-    partial(packet, state, fn full_message ->
-      full_message
-      |> ROS.Message.ConnectionHeader.parse()
-      |> IO.inspect(label: "incoming connection header", limit: :infinity)
+  def handle_info({:tcp_closed, socket}, state) do
+    Logger.debug(fn -> "TCP connection closed" end)
 
-      state
-    end)
-  end
-
-  def handle_info({:tcp_closed, _socket}, state) do
-    Logger.warn("TCP connection closed")
+    :gen_tcp.close(socket)
 
     {:noreply, state}
-  end
-
-  private do
-    defp build_conn_header(psub) do
-      psub
-      |> ConnHead.from()
-      |> ConnHead.serialize()
-    end
   end
 end

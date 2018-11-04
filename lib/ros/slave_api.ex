@@ -36,6 +36,13 @@ defmodule ROS.SlaveApi do
     {:reply, [1, "ROS Master Uri", master_uri()], state}
   end
 
+  # catch the empty list of publishers (when a publisher dies)
+  def handle_call({"publisherUpdate", ["/master", topic, []]}, _from, state) do
+    state = put_in(state[:remote_publishers], %{topic => []})
+
+    {:reply, [1, "thanks for the update.", 0], state}
+  end
+
   def handle_call(
         {"publisherUpdate", ["/master", topic, publisher_list]},
         _from,
@@ -48,12 +55,11 @@ defmodule ROS.SlaveApi do
         {:reply, [1, "go fish. i don't have that sub.", 1], state}
 
       {:ok, sub} ->
-        for pub <- publisher_list do
-          ROS.Subscriber.request(sub, node_name, topic, pub, [["TCPROS"]])
-        end
-    end
+        pub = List.first(publisher_list)
+        ROS.Subscriber.request(sub, node_name, topic, pub, [["TCPROS"]])
 
-    {:reply, [1, "publisher list for #{topic} updated.", 0], state}
+        {:reply, [1, "publisher list for #{topic} updated.", 0], state}
+    end
   end
 
   def handle_call(
