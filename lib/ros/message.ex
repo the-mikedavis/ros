@@ -55,7 +55,7 @@ defmodule ROS.Message do
 
   ## Examples
 
-      iex> data = <<16, 0, 0, 0, 0, 0, 176, 65, 0, 0, 4, 66, 0, 0, 48, 66, 0, 0, 0, 0>>
+      iex> data = <<0, 0, 176, 65, 0, 0, 4, 66, 0, 0, 48, 66, 0, 0, 0, 0>>
       iex> ROS.Message.deserialize(data, "std_msgs/ColorRGBA")
       %StdMsgs.ColorRGBA{r: 22.0, g: 33.0, b: 44.0, a: 0.0}
       iex> ROS.Message.deserialize(data, StdMsgs.ColorRGBA)
