@@ -2,6 +2,7 @@ defmodule MyRosProject.Application do
   @moduledoc false
 
   import ROS.Node.Spec
+  require Logger
 
   use Application
 
@@ -13,9 +14,9 @@ defmodule MyRosProject.Application do
 
     children = [
       node(:"/mynode", [
-        publisher(:talker, "/other_chatter", "std_msgs/Int16")
-        subscriber("/chatter", "std_msgs/Int32MultiArray", &IO.inspect/1)
-        service_proxy(:proximus, "/add_two_ints", "rospy_tutorials/AddTwoInts")
+        publisher(:talker, "/other_chatter", "std_msgs/Int16"),
+        subscriber("/chatter", "std_msgs/Int32MultiArray", &IO.inspect/1),
+        service_proxy(:proximus, "/add_two_ints", "rospy_tutorials/AddTwoInts"),
         service("/add_two_ints", "rospy_tutorials/AddTwoInts", add_two_ints)
       ])
     ]
