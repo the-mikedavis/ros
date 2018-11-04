@@ -3,6 +3,10 @@ defmodule ROS.SlaveApi do
   use Private
   require Logger
 
+  @moduledoc false
+  # this module just keeps track of the publishers and subscribers of a node.
+  # each node has 1 slave_api child.
+
   @default_state %{remote_publishers: %{}}
 
   defstruct [:children, :node_name, :uri]

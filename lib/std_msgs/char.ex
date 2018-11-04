@@ -1,4 +1,5 @@
 defmodule StdMsgs.Char do
+  @moduledoc false
   @behaviour ROS.Message.Behaviour
 
   @type t :: %__MODULE__{data: non_neg_integer()}

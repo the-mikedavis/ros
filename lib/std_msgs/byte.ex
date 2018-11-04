@@ -1,4 +1,5 @@
 defmodule StdMsgs.Byte do
+  @moduledoc false
   @behaviour ROS.Message.Behaviour
 
   @type t :: %__MODULE__{data: integer()}

@@ -1,4 +1,8 @@
 defmodule ROS.Message.Behaviour do
+  @moduledoc false
+  # The behaviour held by every message. Every message should be able to produce
+  # its md5sum, its definition, and the types, for serializing
+
   @doc "Show the message's md5sum, which is useful for message versioning"
   @callback md5sum() :: String.t()
 

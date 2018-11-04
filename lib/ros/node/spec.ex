@@ -1,4 +1,28 @@
 defmodule ROS.Node.Spec do
+  @moduledoc """
+  A set of functions for declaring ROS abstractions for your Supervisor setup.
+
+  Add ROS abstractions to your `lib/my_project/application.ex` like so:
+
+      iex> children = [
+      ...>   node(:"/mynode", [
+      ...>     publisher(:mypub, "chatter", "std_msgs/String"),
+      ...>     subscriber("other_chatter", "std_msgs/Int16", &IO.inspect/1),
+      ...>     service_proxy(:myproxy, "add_two_ints", "rospy_tutorials/AddTwoInts"),
+      ...>     service("add_two_ints", "rospy_tutorials/AddTwoInts", fn %RospyTutorials.AddTwoInts.Request{a: a, b: b} ->
+      ...>       %RospyTutorials.AddTwoInts.Response{sum: a + b}
+      ...>     end)
+      ...>   ])
+      ...> ]
+      iex> Supervisor.start_link(children, strategy: :one_for_one)
+
+  Note that you can also write any ROS types in their module form after you've
+  compiled them with `mix genmsg` or `mix gensrv`
+
+      iex> publisher(:mypub, "chatter", StdMsgs.String)
+      iex> service_proxy(:myproxy, "add_two_ints", RospyTutorials.AddTwoInts)
+  """
+
   @spec node(atom(), [tuple()]) :: {module(), %ROS.Node{}}
   def node(name, children \\ []) do
     {ROS.Node, %ROS.Node{children: children, name: name}}

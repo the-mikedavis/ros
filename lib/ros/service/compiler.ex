@@ -28,6 +28,7 @@ defmodule ROS.Service.Compiler do
       |> Enum.join("\n\n")
 
     """
+    @moduledoc false
     @type t :: %__MODULE__{#{typespec}}
 
     defstruct [#{struct}]
@@ -43,6 +44,8 @@ defmodule ROS.Service.Compiler do
 
     """
     defmodule #{mod_name} do
+      @moduledoc false
+
       defmodule #{mod_name}.Request do\n#{request}
       end
 

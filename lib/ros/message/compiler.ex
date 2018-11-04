@@ -37,6 +37,7 @@ defmodule ROS.Message.Compiler do
 
     """
     defmodule #{mod_name} do
+      @moduledoc false
       @behaviour ROS.Message.Behaviour
 
       @type t :: %__MODULE__{#{typespec}}
