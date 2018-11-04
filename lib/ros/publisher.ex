@@ -11,28 +11,48 @@ defmodule ROS.Publisher do
   (depending on when it is spun up).
   """
 
-  def start_link(opts \\ []) do
-    name = Keyword.fetch!(opts, :name)
+  # don't use the struct! internal use only!
 
-    DynamicSupervisor.start_link(__MODULE__, opts, name: name)
+  @enforce_keys [:name, :topic, :type]
+  defstruct @enforce_keys ++ [:node_name, :uri]
+
+  @doc false
+  def start_link(pub) do
+    DynamicSupervisor.start_link(__MODULE__, pub, name: pub.name)
   end
 
+  @doc false
   @impl DynamicSupervisor
-  def init(opts) do
-    ROS.MasterApi.register_publisher(opts)
+  def init(pub) do
+    ROS.MasterApi.register_publisher(pub)
 
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  @spec connect(Keyword.t(), String.t()) :: non_neg_integer()
+  # used to start a new connection when a subscriber asks to hear from the
+  # publisher
+  @doc false
+  @spec connect(%ROS.Publisher{}, String.t()) :: non_neg_integer()
   def connect(publisher, "TCPROS") do
     spec = {ROS.TCP, %{pub: publisher}}
 
-    {:ok, pid} = DynamicSupervisor.start_child(publisher[:name], spec)
+    {:ok, pid} = DynamicSupervisor.start_child(publisher.name, spec)
 
     GenServer.call(pid, :accept)
   end
 
+  @doc """
+  Publish a message from a publisher.
+
+  This is asynchronous. A list of :ok atoms will be received, one for each
+  TCP connection to the publisher.
+
+  ## Examples
+
+      iex> ROS.Publisher.publish(:mypub, %StdMsgs.String{data: "hello!"})
+      [:ok]
+  """
+  @spec publish(atom(), struct()) :: [:ok]
   def publish(publisher, message) do
     # Broadcast the message to all open connections
     publisher

@@ -1,47 +1,29 @@
 defmodule ROS.Node.Spec do
-  @spec node(atom(), [tuple()], Keyword.t()) ::
-          {module(), {[tuple()], Keyword.t()}}
-  def node(name, children \\ [], opts \\ []) do
-    {ROS.Node, {children, opts ++ [name: name]}}
+  @spec node(atom(), [tuple()]) :: {module(), %ROS.Node{}}
+  def node(name, children \\ []) do
+    {ROS.Node, %ROS.Node{children: children, name: name}}
   end
 
-  @spec publisher(atom(), String.t(), String.t() | module(), Keyword.t()) ::
-          {module(), Keyword.t()}
-  def publisher(name, topic, type, opts \\ []) do
-    base_opts = [name: name, topic: topic, type: type]
-
-    {ROS.Publisher, opts ++ base_opts}
+  @spec publisher(atom(), String.t(), String.t() | module()) ::
+          {module(), %ROS.Publisher{}}
+  def publisher(name, topic, type) do
+    {ROS.Publisher, %ROS.Publisher{name: name, topic: topic, type: type}}
   end
 
-  @spec subscriber(
-          String.t(),
-          String.t() | module(),
-          (struct() -> any()),
-          Keyword.t()
-        ) :: {module, Keyword.t()}
-  def subscriber(topic, type, callback, opts \\ []) do
-    base_opts = [topic: topic, type: type, callback: callback]
-
-    {ROS.Subscriber, opts ++ base_opts}
+  @spec subscriber(String.t(), String.t() | module(), (struct() -> any())) ::
+    {module(), %ROS.Subscriber{}}
+  def subscriber(topic, type, callback) do
+    {ROS.Subscriber, %ROS.Subscriber{topic: topic, type: type, callback: callback}}
   end
 
-  @spec service_proxy(atom(), String.t(), String.t() | module(), Keyword.t()) ::
-          {module(), Keyword.t()}
-  def service_proxy(name, service, type, opts \\ []) do
-    base_opts = [name: name, service: service, type: type]
-
-    {ROS.Service.Proxy, opts ++ base_opts}
+  @spec service_proxy(atom(), String.t(), String.t() | module()) ::
+          {module(), %ROS.Service.Proxy{}}
+  def service_proxy(name, service, type) do
+    {ROS.Service.Proxy, %ROS.Service.Proxy{name: name, service: service, type: type}}
   end
 
-  @spec service(
-          String.t(),
-          String.t() | module(),
-          (struct() -> any()),
-          Keyword.t()
-        ) :: {module(), Keyword.t()}
-  def service(service, type, callback, opts \\ []) do
-    base_opts = [service: service, type: type, callback: callback]
-
-    {ROS.Service, opts ++ base_opts}
+  @spec service(String.t(), String.t() | module(), (struct() -> any())) :: {module(), %ROS.Service{}}
+  def service(service, type, callback) do
+    {ROS.Service, %ROS.Service{service: service, type: type, callback: callback}}
   end
 end

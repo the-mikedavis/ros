@@ -67,6 +67,9 @@ defmodule ROS.Service do
       1 ->
         type = Module.concat(type, Response)
 
+        # strip the length header
+        {_length, rest} = Satchel.unpack_take(rest, :uint32)
+
         {:ok, ROS.Message.deserialize(rest, type)}
 
       0 ->
@@ -76,28 +79,24 @@ defmodule ROS.Service do
 
   ## Server API
 
-  @doc false
-  def from_node_name(node_name, opts) do
-    String.to_atom(Atom.to_string(node_name) <> "_" <> opts[:service])
-  end
+  @enforce_keys [:type, :service, :callback]
+  defstruct @enforce_keys ++ [:node_name, :uri]
 
   @doc false
-  def start_link(opts \\ []) do
-    name = Keyword.fetch!(opts, :name)
-
-    GenServer.start_link(__MODULE__, opts, name: name)
+  def start_link(srv) do
+    GenServer.start_link(__MODULE__, srv, name: NodeName.of(srv))
   end
 
   @impl GenServer
-  def init(opts) do
+  def init(srv) do
     socket = open_socket()
     port = port_of(socket)
 
     GenServer.cast(self(), {:accept, socket})
 
-    ROS.MasterApi.register_service(opts, port)
+    ROS.MasterApi.register_service(srv, port)
 
-    {:ok, %{service: opts, socket: socket, port: port}}
+    {:ok, %{service: srv, socket: socket, port: port}}
   end
 
   @impl GenServer
@@ -143,11 +142,11 @@ defmodule ROS.Service do
     # wait for the whole message to arrive
     partial(packet, state, fn full_message ->
       # parse the request
-      request = ROS.Service.deserialize_request(full_message, service[:type])
+      request = ROS.Service.deserialize_request(full_message, service.type)
 
       # try to do the callback
       try do
-        service[:callback].(request)
+        service.callback.(request)
       rescue
         e in ROS.Service.Error ->
           # make sure to log the error
@@ -234,5 +233,11 @@ defmodule ROS.Service do
     # send a packet of binary data out of a socket
     @spec send_line(binary(), :gen_tcp.socket()) :: :ok | {:error, atom()}
     defp send_line(data, socket), do: :gen_tcp.send(socket, data)
+  end
+end
+
+defimpl NodeName, for: ROS.Service do
+  def of(%ROS.Service{node_name: node_name, service: service}) do
+    String.to_atom("#{node_name}_#{service}")
   end
 end

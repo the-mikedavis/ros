@@ -4,6 +4,7 @@ defmodule ROS.Service.Proxy do
   require Logger
 
   alias ROS.Message.ConnectionHeader, as: ConnHead
+  alias ROS.TCP, as: TCP
 
   @moduledoc """
   Service Proxies allow you to make requests to services.
@@ -52,7 +53,7 @@ defmodule ROS.Service.Proxy do
       iex> alias ROS.Service.Proxy, as: SrvPrx
       iex> SrvPrx.request!(:myproxy, %RospyTutorials.AddTwoInts.Request{a: 3, b: 4))
       %RospyTutorials.AddTwoInts.Response{sum: 7}
-      iex> SrvPrx.request!(:ididntmakethisserviceproxy, %ThisDoesntExist{})
+      iex> SrvPrx.request!(:ididntmakethisserviceproxy, %StdSrv.Empty{})
       (** ROS.Service.Error) ...
   """
   @spec request!(atom(), struct(), non_neg_integer()) :: struct() | no_return()
@@ -64,17 +65,13 @@ defmodule ROS.Service.Proxy do
   end
 
   ## Server API
-  @doc false
-  @spec from_node_name(atom(), Keyword.t()) :: atom()
-  def from_node_name(node_name, opts) do
-    String.to_atom(Atom.to_string(node_name) <> "_" <> opts[:service])
-  end
+
+  @enforce_keys [:name, :service, :type]
+  defstruct @enforce_keys ++ [:node_name, :uri]
 
   @doc false
-  def start_link(opts \\ []) do
-    name = Keyword.fetch!(opts, :name)
-
-    GenServer.start_link(__MODULE__, opts, name: name)
+  def start_link(srv_prx) do
+    GenServer.start_link(__MODULE__, srv_prx, name: srv_prx.name)
   end
 
   @impl GenServer
@@ -93,7 +90,7 @@ defmodule ROS.Service.Proxy do
            request <- ROS.Message.serialize(data),
            :ok <- send_line(socket, request),
            {:ok, raw_response} <- read_line(socket) do
-        ROS.Service.deserialize_response(raw_response, proxy[:type])
+        ROS.Service.deserialize_response(raw_response, proxy.type)
       else
         e -> e
       end
@@ -102,7 +99,7 @@ defmodule ROS.Service.Proxy do
   end
 
   private do
-    @spec lookup_service(Keyword.t()) ::
+    @spec lookup_service(%ROS.Service.Proxy{}) ::
             {:ok, String.t()} | {:error, :noservices}
     defp lookup_service(proxy) do
       case ROS.MasterApi.lookup_service(proxy) do
@@ -148,15 +145,13 @@ defmodule ROS.Service.Proxy do
       :gen_tcp.send(socket, line)
     end
 
-    @spec send_conn_header(:gen_tcp.socket(), Keyword.t()) ::
+    @spec send_conn_header(:gen_tcp.socket(), %ROS.Service.Proxy{}) ::
             :ok | {:error, atom()}
     defp send_conn_header(socket, proxy) do
-      message =
-        proxy
-        |> ConnHead.from()
-        |> ConnHead.serialize()
-
-      send_line(socket, message)
+      proxy
+      |> ConnHead.from()
+      |> ConnHead.serialize()
+      |> TCP.send(socket)
     end
   end
 end

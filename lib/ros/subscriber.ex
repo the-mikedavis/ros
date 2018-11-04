@@ -16,24 +16,23 @@ defmodule ROS.Subscriber do
   #
   # called by the slave_api when master gives us a message that there's someone
   # new publishing the topic
-  @spec request(Keyword.t(), atom(), String.t(), String.t(), [[String.t()]]) ::
+  @spec request(%ROS.Subscriber{}, atom(), String.t(), String.t(), [[String.t()]]) ::
           :ok
   def request(sub, node_name, topic, publisher, transport) do
-    name = Keyword.fetch!(sub, :name)
-
-    GenServer.cast(name, {:request, [node_name, topic, transport, publisher]})
+    sub
+    |> NodeName.of()
+    |> GenServer.cast({:request, [node_name, topic, transport, publisher]})
   end
+
+  # don't use this struct! internal use only!
+
+  @enforce_keys [:topic, :type, :callback]
+  defstruct @enforce_keys ++ [:node_name, :uri]
 
   ## Server API
 
-  def from_node_name(node_name, opts) do
-    String.to_atom(Atom.to_string(node_name) <> "_" <> opts[:topic])
-  end
-
-  def start_link(opts) do
-    name = Keyword.fetch!(opts, :name)
-
-    GenServer.start_link(__MODULE__, opts, name: name)
+  def start_link(sub) do
+    GenServer.start_link(__MODULE__, sub, name: NodeName.of(sub))
   end
 
   @impl GenServer
@@ -78,8 +77,8 @@ defmodule ROS.Subscriber do
   def handle_info({:tcp, _socket, packet}, %{sub: sub} = state) do
     partial(packet, state, fn full_message ->
       full_message
-      |> ROS.Message.deserialize(sub[:type])
-      |> sub[:callback].()
+      |> ROS.Message.deserialize(sub.type)
+      |> sub.callback.()
 
       state
     end)
@@ -127,54 +126,62 @@ defmodule ROS.Subscriber do
     {:noreply, state}
   end
 
-  # do what's needed to connect to a publisher
-  @spec request(atom(), String.t(), [[String.t()]], String.t()) :: any()
-  defp request(node_name, topic, transport, publisher) do
-    node_name
-    |> Atom.to_string()
-    # request the topic *from the publisher's XML-RPC server* (not from master)
-    |> Api.request_topic(topic, transport, publisher)
-    |> case do
-      # if they say yes, try to connect to them.
-      [1, _, [protocol, ip, port]] ->
-        GenServer.cast(self(), {:connect, ip, port, protocol})
-
-      # try again in 1 second if they said no.
-      _ ->
-        Process.send_after(self(), {:request, [node_name, topic, transport, publisher]}, 1_000)
-    end
-  end
-
   private do
-    defp look_for_publishers(sub) do
-      name = Keyword.fetch!(sub, :name)
+    # do what's needed to connect to a publisher
+    @spec request(atom(), String.t(), [[String.t()]], String.t()) :: any()
+    defp request(node_name, topic, transport, publisher) do
+      node_name
+      |> Atom.to_string()
+      # request the topic *from the publisher's XML-RPC server* (not from master)
+      |> Api.request_topic(topic, transport, publisher)
+      |> case do
+        # if they say yes, try to connect to them.
+        [1, _, [protocol, ip, port]] ->
+          GenServer.cast(self(), {:connect, ip, port, protocol})
 
-      case Api.get_system_state(name) do
+        # try again in 1 second if they said no.
+        _ ->
+          Process.send_after(self(), {:request, [node_name, topic, transport, publisher]}, 1_000)
+      end
+    end
+
+    # upon startup, look for publishers in case they were started before this
+    # sub
+    defp look_for_publishers(sub) do
+      sub
+      |> NodeName.of()
+      |> Api.get_system_state()
+      |> case do
         [1, _, [pubs, _subs, _services]] ->
           pubs
-          |> Enum.filter(fn [topic, topic_pubs] -> topic == sub[:topic] end)
+          |> Enum.filter(fn [topic, _topic_pubs] -> topic == sub.topic end)
           |> Enum.map(fn [_topic, topic_pubs] -> List.first(topic_pubs) end)
-          |> lookup_publisher(sub)
-          # |> subscribe_to(sub)
+          |> subscribe_to(sub)
 
         _ -> :ok
       end
     end
 
-    defp lookup_publisher([], _sub), do: :ok
-    defp lookup_publisher([pub_name | _], sub) do
-      case Api.lookup_node(sub[:node_name], pub_name) do
+    defp subscribe_to([], _sub), do: :ok
+    defp subscribe_to([pub_name | _], sub) do
+      sub
+      |> NodeName.of()
+      |> Api.lookup_node(pub_name)
+      |> case do
         [1, _, pub_uri] ->
-          request(sub, sub[:node_name], sub[:topic], pub_uri, [["TCPROS"]])
+          request(sub, sub.node_name, sub.topic, pub_uri, [["TCPROS"]])
+
+          :ok
 
         _ ->
           :ok
       end
     end
+  end
+end
 
-    defp subscribe_to([], _sub), do: :ok
-    defp subscribe_to([[topic, [pub | _]] | _], sub) do
-      request(sub, sub[:node_name], topic, pub, [["TCPROS"]])
-    end
+defimpl NodeName, for: ROS.Subscriber do
+  def of(%ROS.Subscriber{node_name: node_name, topic: topic}) do
+    String.to_atom("#{node_name}_#{topic}")
   end
 end

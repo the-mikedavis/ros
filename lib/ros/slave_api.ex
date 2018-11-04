@@ -3,20 +3,17 @@ defmodule ROS.SlaveApi do
   use Private
   require Logger
 
-  # unclear as of yet if this is useful... doubtful
   @default_state %{remote_publishers: %{}}
 
-  @spec start_link(Keyword.t()) :: :ok
-  def start_link(opts) do
-    name = Keyword.fetch!(opts, :name)
+  defstruct [:children, :node_name, :uri]
 
-    GenServer.start_link(__MODULE__, opts, name: name)
+  @spec start_link(Keyword.t()) :: :ok
+  def start_link(server) do
+    GenServer.start_link(__MODULE__, server, name: NodeName.of(server))
   end
 
   @impl GenServer
-  def init(node_info) do
-    {:ok, consume(node_info)}
-  end
+  def init(server), do: {:ok, consume(server)}
 
   @spec call(atom(), String.t(), [any()]) :: [any()]
   def call(name, method, args), do: GenServer.call(name, {method, args})
@@ -24,12 +21,6 @@ defmodule ROS.SlaveApi do
   @doc "Gets the master URI pointed to by the env var ROS MASTER URI"
   @spec master_uri() :: String.t()
   def master_uri, do: System.get_env("ROS_MASTER_URI")
-
-  @doc "Append the node name with \"_api_server\""
-  @spec from_node_name(atom(), Keyword.t()) :: atom()
-  def from_node_name(name, _opts) do
-    String.to_atom(Atom.to_string(name) <> "_api_server")
-  end
 
   @impl GenServer
   def handle_call({"getMasterUri", [_caller_id]}, _from, state) do
@@ -46,7 +37,7 @@ defmodule ROS.SlaveApi do
   def handle_call(
         {"publisherUpdate", ["/master", topic, publisher_list]},
         _from,
-        %{node_name: node_name, local_subs: all_subs} = state
+        %{local_subs: all_subs} = state
       ) do
     state = put_in(state[:remote_publishers], %{topic => publisher_list})
 
@@ -56,7 +47,7 @@ defmodule ROS.SlaveApi do
 
       {:ok, sub} ->
         pub = List.first(publisher_list)
-        ROS.Subscriber.request(sub, node_name, topic, pub, [["TCPROS"]])
+        ROS.Subscriber.request(sub, sub.node_name, topic, pub, [["TCPROS"]])
 
         {:reply, [1, "publisher list for #{topic} updated.", 0], state}
     end
@@ -65,13 +56,13 @@ defmodule ROS.SlaveApi do
   def handle_call(
         {"requestTopic", [_caller_id, topic, [["TCPROS"]]]},
         _from,
-        %{local_pubs: pubs, uri: {ip, _}} = state
+        %{local_pubs: pubs, slave_api: %{uri: {ip, _port}}} = state
       ) do
     port =
       # get the first pub that has this topic and call its connect function
       pubs
-      |> Enum.find_value(fn {pub_topic, opts} ->
-        pub_topic == topic && opts
+      |> Enum.find_value(fn {pub_topic, pub} ->
+        pub_topic == topic && pub
       end)
       |> ROS.Publisher.connect("TCPROS")
 
@@ -80,28 +71,32 @@ defmodule ROS.SlaveApi do
 
   def handle_call({fun, _params}, _from, state) do
     Logger.warn(fn -> "no implementation for #{fun} in slave api" end)
-    {:relply, [-1, "method not found", fun], state}
+    {:reply, [-1, "method not found", fun], state}
   end
 
   private do
     @spec consume(Keyword.t()) :: %{}
-    defp consume(opts) do
-      {children, opts} = Keyword.pop(opts, :children, [])
-      opts_map = Enum.into(opts, @default_state)
-
+    defp consume(%ROS.SlaveApi{children: children} = slave_api) do
       children
       |> Enum.reduce(%{}, &add_to_map/2)
-      |> Map.merge(opts_map)
+      |> Map.merge(@default_state)
+      |> Map.put(:slave_api, slave_api)
     end
 
-    defp add_to_map({ROS.Publisher, opts}, acc) do
-      put_in(acc[:local_pubs], %{opts[:topic] => opts})
+    defp add_to_map({ROS.Publisher, pub}, acc) do
+      put_in(acc[:local_pubs], %{pub.topic => pub})
     end
 
-    defp add_to_map({ROS.Subscriber, opts}, acc) do
-      put_in(acc[:local_subs], %{opts[:topic] => opts})
+    defp add_to_map({ROS.Subscriber, sub}, acc) do
+      put_in(acc[:local_subs], %{sub.topic => sub})
     end
 
     defp add_to_map(_, acc), do: acc
+  end
+end
+
+defimpl NodeName, for: ROS.SlaveApi do
+  def of(%ROS.SlaveApi{node_name: node_name}) do
+    String.to_atom("#{node_name}_xml_rpc_server")
   end
 end

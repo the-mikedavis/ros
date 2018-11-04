@@ -1,3 +1,8 @@
+defprotocol NodeName do
+  # gives atom names to things, so they can be called as GenServers
+  def of(structure)
+end
+
 defmodule ROS.Node do
   use Supervisor
   use Private
@@ -5,40 +10,38 @@ defmodule ROS.Node do
 
   @moduledoc false
 
+  defstruct [:name, :children]
+
   @behaviour :cowboy_handler
 
   @xml_header %{"Content-Type" => "text/xml"}
-  @default_opts []
-  @api_server {ROS.SlaveApi, []}
 
   @doc false
-  @spec start_link({[{module(), Keyword.t()}], Keyword.t()}) :: {:ok, pid()}
-  def start_link({children, user_opts}) do
-    name = Keyword.fetch!(user_opts, :name)
+  @spec start_link(%ROS.Node{}) :: {:ok, pid()}
+  def start_link(ros_node) do
+    server = %ROS.SlaveApi{node_name: ros_node.name}
 
     dispatch =
       :cowboy_router.compile([
-        {:_, [{:_, __MODULE__, [ROS.SlaveApi.from_node_name(name, [])]}]}
+        {:_, [{:_, __MODULE__, [NodeName.of(server)]}]}
       ])
 
-    opts =
-      user_opts
-      |> Keyword.merge(@default_opts)
-      |> Keyword.put(:dispatch, dispatch)
+    # add the xml-rpc server to children
+    # ros_node = %ROS.Node{ros_node | children: [{ROS.SlaveApi, server} | ros_node.children]}
 
-    Supervisor.start_link(__MODULE__, {[@api_server | children], name, opts},
-      name: name
-    )
+    Supervisor.start_link(__MODULE__, {ros_node, server, dispatch}, name: ros_node.name)
   end
 
   @impl Supervisor
-  def init({children, name, opts}) do
-    name
-    |> comm_server_name()
-    |> start_server(opts)
-    |> inform_children(name, children)
-    |> ensure_children_named()
-    |> children_meet_children()
+  def init({ros_node, server, dispatch}) do
+    uri =
+      server
+      |> NodeName.of()
+      |> start_server(dispatch)
+
+    children = Enum.map(ros_node.children, &inform(&1, ros_node.name, uri))
+
+    [{ROS.SlaveApi, %ROS.SlaveApi{node_name: ros_node.name, children: children, uri: uri}} | children]
     |> Supervisor.init(strategy: :one_for_one)
   end
 
@@ -51,36 +54,34 @@ defmodule ROS.Node do
   def terminate(_reason, _request, _state), do: :ok
 
   private do
-    @spec comm_server_name(atom()) :: atom()
-    defp comm_server_name(name) do
-      String.to_atom(Atom.to_string(name) <> "_xmlrpc_server")
-    end
+    # startup things
 
-    @spec start_server(atom(), Keyword.t()) :: {String.t(), pos_integer()}
-    defp start_server(name, opts) do
-      :cowboy.start_clear(name, [], %{env: %{dispatch: opts[:dispatch]}})
+    @spec start_server(atom(), any()) :: {String.t(), pos_integer()}
+    defp start_server(name, dispatch) do
+      :cowboy.start_clear(name, [], %{env: %{dispatch: dispatch}})
 
       {local_ip(), :ranch.get_port(name)}
     end
 
-    @spec inform_children(
-            {String.t(), pos_integer()},
-            atom(),
-            {module(), Keyword.t()}
-          ) :: [{module(), Keyword.t()}]
-    defp inform_children(uri, name, children) do
-      for {module, opts} <- children do
-        {module, [uri: uri, node_name: name] ++ opts}
-      end
+    @spec local_ip() :: String.t()
+    defp local_ip do
+      {:ok, ips} = :inet.getif()
+
+      ips
+      |> Enum.map(fn {ip, _broadaddr, _mast} -> ip end)
+      |> Enum.reject(fn ip -> ip == {127, 0, 0, 1} end)
+      |> List.first()
+      |> Tuple.to_list()
+      |> Enum.join(".")
     end
 
-    @spec children_meet_children({module(), Keyword.t()}) ::
-            {module(), Keyword.t()}
-    defp children_meet_children(children) do
-      for {module, opts} <- children do
-        {module, [children: children] ++ opts}
-      end
+    @spec inform({module(), struct()}, atom(), {String.t(), pos_integer()})
+          :: [{module(), Keyword.t()}]
+    defp inform({type, child}, name, uri) do
+      {type, %{child | node_name: name, uri: uri}}
     end
+
+    # stuff for cowboy server
 
     @spec handle(any(), atom()) :: any()
     defp handle(req, api_server_name) do
@@ -106,34 +107,6 @@ defmodule ROS.Node do
       return = ROS.SlaveApi.call(api_server_name, fun, args)
 
       XMLRPC.encode!(%XMLRPC.MethodResponse{param: return})
-    end
-
-    @spec local_ip() :: String.t()
-    defp local_ip do
-      {:ok, ips} = :inet.getif()
-
-      ips
-      |> Enum.map(fn {ip, _broadaddr, _mast} -> ip end)
-      |> Enum.reject(fn ip -> ip == {127, 0, 0, 1} end)
-      |> Enum.map(&Tuple.to_list/1)
-      |> Enum.map(&Enum.join(&1, "."))
-      |> List.first()
-    end
-
-    @spec ensure_children_named([{module(), list()}]) :: [{module(), list()}]
-    defp ensure_children_named(children) do
-      Enum.map(children, &name_child/1)
-    end
-
-    defp name_child({module, opts}) do
-      node_name = Keyword.fetch!(opts, :node_name)
-
-      name =
-        Keyword.get_lazy(opts, :name, fn ->
-          module.from_node_name(node_name, opts)
-        end)
-
-      {module, Keyword.put(opts, :name, name)}
     end
   end
 end
