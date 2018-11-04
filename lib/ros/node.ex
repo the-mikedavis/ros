@@ -19,15 +19,14 @@ defmodule ROS.Node do
   @doc false
   @spec start_link(%ROS.Node{}) :: {:ok, pid()}
   def start_link(ros_node) do
+    bootstrap()
+
     server = %ROS.SlaveApi{node_name: ros_node.name}
 
     dispatch =
       :cowboy_router.compile([
         {:_, [{:_, __MODULE__, [NodeName.of(server)]}]}
       ])
-
-    # add the xml-rpc server to children
-    # ros_node = %ROS.Node{ros_node | children: [{ROS.SlaveApi, server} | ros_node.children]}
 
     Supervisor.start_link(__MODULE__, {ros_node, server, dispatch}, name: ros_node.name)
   end
@@ -47,6 +46,7 @@ defmodule ROS.Node do
 
   @impl :cowboy_handler
   def init(req, [api_server_name] = state) do
+    # forward the message to the api server
     {:ok, handle(req, api_server_name), state}
   end
 
@@ -55,6 +55,10 @@ defmodule ROS.Node do
 
   private do
     # startup things
+
+    defp bootstrap do
+      ROS.MasterApi.get_uri()
+    end
 
     @spec start_server(atom(), any()) :: {String.t(), pos_integer()}
     defp start_server(name, dispatch) do

@@ -69,7 +69,17 @@ defmodule ROS.MasterApi do
 
   defp make_call(name, args, target \\ ROS.SlaveApi.master_uri()) do
     Logger.debug(fn -> "Requesting: [\"#{name}\", #{inspect(args)}] from #{target}" end)
-    call = Xenium.call!(target, name, args)
+    call =
+      try do
+        Xenium.call!(target, name, args)
+      rescue
+        e in HTTPoison.Error ->
+          Logger.error(fn ->
+            "Error contacting ROS Master! Is `roscore` running?"
+          end)
+
+          raise e
+      end
 
     call
     |> inspect()
