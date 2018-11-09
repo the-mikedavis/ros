@@ -1,9 +1,24 @@
 defmodule ROS do
   @moduledoc """
-  ROS keeps the contexts that define your domain
-  and business logic.
-
-  Contexts are also responsible for managing your data, regardless
-  if it comes from the database, an external API or others.
+  A ROS client library for Elixir.
   """
+
+  @doc """
+  Aliases common modules and imports the `ROS.Node.Spec`
+
+  - ROS.Publisher -> Publisher
+  - ROS.Subscriber -> Subscriber
+  - ROS.Service -> Service
+  - ROS.Service.Proxy -> ServiceProxy
+
+  The `ROS.Node.Spec` allows you to easily define the structure of your
+  program when starting the application.
+  """
+  defmacro __using__(_) do
+    quote do
+      alias ROS.{Publisher, Subscriber, Service}
+      alias ROS.Service.Proxy, as: ServiceProxy
+      import ROS.Node.Spec
+    end
+  end
 end
