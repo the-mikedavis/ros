@@ -188,7 +188,8 @@ defmodule ROS.Node.Spec do
      %ROS.Service{service: service, type: type, callback: callback}}
   end
 
-  def service(service, type, listener) when is_pid(listener) or is_atom(listener) do
+  def service(service, type, listener)
+      when is_pid(listener) or is_atom(listener) do
     {ROS.Service,
      %ROS.Service{service: service, type: type, listener: listener}}
   end
