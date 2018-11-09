@@ -16,10 +16,11 @@ defmodule MyRosProject.Application do
     children = [
       node(:"/mynode", [
         publisher(:talker, "/other_chatter", "std_msgs/Int16"),
-        subscriber("/chatter", "std_msgs/Int32MultiArray", &IO.inspect/1),
+        subscriber("/chatter", StdMsgs.String, MyRosProject.ChatterServer),
         service_proxy(:myproxy, "/add_two_ints", "rospy_tutorials/AddTwoInts"),
         service("/add_two_ints", "rospy_tutorials/AddTwoInts", add_two_ints)
-      ])
+      ]),
+      {MyRosProject.ChatterServer, []}
     ]
 
     opts = [strategy: :one_for_one, name: MyRosProject.Supervisor]
