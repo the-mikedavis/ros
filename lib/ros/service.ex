@@ -80,8 +80,8 @@ defmodule ROS.Service do
 
   ## Server API
 
-  @enforce_keys [:type, :service, :callback]
-  defstruct @enforce_keys ++ [:node_name, :uri]
+  @enforce_keys [:type, :service]
+  defstruct @enforce_keys ++ [:node_name, :uri, :callback, :listener]
 
   @doc false
   def start_link(srv) do
@@ -142,12 +142,11 @@ defmodule ROS.Service do
   def handle_info({:tcp, socket, packet}, %{service: service} = state) do
     # wait for the whole message to arrive
     partial(packet, state, fn full_message ->
-      # parse the request
-      request = ROS.Service.deserialize_request(full_message, service.type)
-
       # try to do the callback
       try do
-        service.callback.(request)
+        full_message
+        |> deserialize_request(service.type)
+        |> handle(service)
       rescue
         e in ROS.Service.Error ->
           # make sure to log the error
@@ -162,7 +161,7 @@ defmodule ROS.Service do
 
           # return the error struct normalized to a ros service error
           # makes parsing easier
-          %ROS.Service.Error{message: to_string(e)}
+          %ROS.Service.Error{message: inspect(e)}
       end
       |> force_type(Module.concat(Helpers.module(service.type), Response))
       |> ROS.Service.serialize()
@@ -235,6 +234,15 @@ defmodule ROS.Service do
     @spec force_type(struct() | map(), module()) :: struct()
     defp force_type(%type{} = data, type), do: data
     defp force_type(%{} = data, type), do: struct(type, data)
+
+    @spec handle(any(), %__MODULE__{}) :: any()
+    defp handle(request, %{callback: callback}) when is_function(callback) do
+      callback.(request)
+    end
+
+    defp handle(request, %{listener: listener}) do
+      GenServer.call(listener, {:service, request})
+    end
   end
 end
 

@@ -23,11 +23,37 @@ defmodule ROS.Node.Spec do
       iex> service_proxy(:myproxy, "add_two_ints", RospyTutorials.AddTwoInts)
   """
 
+  @typedoc """
+  An identifier for something that listens to messages received by a subscriber
+  or service. Follow the naming conventions of GenServer.
+  """
+  @type listener() :: atom() | pid()
+
+  @doc """
+  Creates a child spec for a node.
+
+  A node is the ROS equivalent of a Supervisor. You should group your
+  publishers, subscribers, services, and service proxies as children of the
+  node. Nodes also startup hidden processes like a Slave API server and an
+  XML-RPC server for interacting with ROS master.
+  """
   @spec node(atom(), [tuple()]) :: {module(), %ROS.Node{}}
   def node(name, children \\ []) do
     {ROS.Node, %ROS.Node{children: children, name: name}}
   end
 
+  @doc """
+  Creates a child spec for a publisher process.
+
+  ## Parameters
+
+  - `name` an atom or reference to call the publisher. This will allow you to
+  call the publisher by name later when making a call to
+  `ROS.Publisher.publish/2`.
+  - `topic` the ROS topic to listen to
+  - `type` the msg type expected in that topic. Either string format
+  ("std_msgs/Int16") or module format `StdMsgs.Int16` are accepted.
+  """
   @spec publisher(atom(), String.t(), String.t() | module()) ::
           {module(), %ROS.Publisher{}}
   def publisher(name, topic, type) do
@@ -40,7 +66,8 @@ defmodule ROS.Node.Spec do
   ## Parameters
 
   - `topic` the ROS topic to listen to
-  - `type` the msg type expected in that topic. Either string format ("std_msgs/Int16") or module format `StdMsgs.Int16` are accepted.
+  - `type` the msg type expected in that topic.
+  Either string format ("std_msgs/Int16") or module format `StdMsgs.Int16` are accepted.
 
   The third parameter can either be a callback function, a pid or atom name,
   or list of pids/atom names.
@@ -101,7 +128,7 @@ defmodule ROS.Node.Spec do
   @spec subscriber(
           String.t(),
           String.t() | module(),
-          (struct() -> any()) | atom() | pid() | [atom() | pid()]
+          (struct() -> any()) | listener() | [listener()]
         ) :: {module(), %ROS.Subscriber{}}
   def subscriber(topic, type, callback) when is_function(callback) do
     {ROS.Subscriber,
@@ -119,6 +146,9 @@ defmodule ROS.Node.Spec do
      %ROS.Subscriber{topic: topic, type: type, listeners: listeners}}
   end
 
+  @doc """
+  Creates a child spec for a service proxy process.
+  """
   @spec service_proxy(atom(), String.t(), String.t() | module()) ::
           {module(), %ROS.Service.Proxy{}}
   def service_proxy(name, service, type) do
@@ -126,10 +156,40 @@ defmodule ROS.Node.Spec do
      %ROS.Service.Proxy{name: name, service: service, type: type}}
   end
 
-  @spec service(String.t(), String.t() | module(), (struct() -> any())) ::
-          {module(), %ROS.Service{}}
-  def service(service, type, callback) do
+  @doc """
+  Creates a child spec for a service process.
+
+  ## Parameters
+
+  - `service` the ROS service name to listen to
+  - `type` the srv type expected in that topic.
+  Either string format ("std_srv/Bool") or module format `StdMsgs.Bool` are
+  accepted.
+
+  The third parameter can either be a callback function a pid or atom name.
+
+  If it's a function, that function will be executed and the return value
+  will be sent as a service response. If it's a pid or atom, the request
+  will be forwarded to that process using `GenServer.call/2`. The reply value
+  from the `call` will be sent to the requestor as a service response.
+  There may only be one listener for services.
+
+  Each `call` sent to the listener will take the form of
+  `{:service, %<service-type>.Request{}}`. (e.g.
+  `{:service, %RospyTutorials.AddTwoInts.Request{a: 3, b: 4}}`).
+  """
+  @spec service(
+          String.t(),
+          String.t() | module(),
+          (struct() -> any()) | listener() | [listener()]
+        ) :: {module(), %ROS.Service{}}
+  def service(service, type, callback) when is_function(callback) do
     {ROS.Service,
      %ROS.Service{service: service, type: type, callback: callback}}
+  end
+
+  def service(service, type, listener) when is_pid(listener) or is_atom(listener) do
+    {ROS.Service,
+     %ROS.Service{service: service, type: type, listener: listener}}
   end
 end

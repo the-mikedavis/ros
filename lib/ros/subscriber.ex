@@ -79,7 +79,7 @@ defmodule ROS.Subscriber do
   def handle_info(
         {:tcp, _socket, packet},
         %{sub: %{listeners: listeners, type: type} = sub} = state
-      ) do
+      ) when is_list(listeners) do
     partial(packet, state, fn full_message ->
       incoming = ROS.Message.deserialize(full_message, type)
 
