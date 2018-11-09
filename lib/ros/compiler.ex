@@ -58,7 +58,7 @@ defmodule ROS.Compiler do
         install_all(to_install, key)
 
       _ ->
-        raise ":#{key} key not found in mix.exs." <>
+        raise ":#{key} key not found in mix.exs. " <>
                 "Please supply a list of #{key}s."
     end
 
@@ -125,6 +125,7 @@ defmodule ROS.Compiler do
         |> File.open!([:write, :utf8])
         |> IO.binwrite(formatted)
       else
+        true -> IO.puts("#{name} already exists.")
         {:error, reason} -> IO.puts("Skipping #{name}: #{reason}")
       end
     end
