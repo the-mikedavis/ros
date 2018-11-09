@@ -27,8 +27,8 @@ defmodule ROS.Subscriber do
 
   # don't use this struct! internal use only!
 
-  @enforce_keys [:topic, :type, :callback]
-  defstruct @enforce_keys ++ [:node_name, :uri]
+  @enforce_keys [:topic, :type]
+  defstruct @enforce_keys ++ [:node_name, :uri, :listeners, :callback]
 
   ## Server API
 
@@ -75,12 +75,23 @@ defmodule ROS.Subscriber do
     end)
   end
 
-  # call the callback on each successive piece of data
-  def handle_info({:tcp, _socket, packet}, %{sub: sub} = state) do
+  # forward the process to listeners if they exist
+  def handle_info({:tcp, _socket, packet}, %{sub: %{listeners: listeners, type: type} = sub} = state) do
+    partial(packet, state, fn full_message ->
+      incoming = ROS.Message.deserialize(full_message, type)
+
+      Enum.each(listeners, &GenServer.cast(&1, {:subscription, NodeName.of(sub), incoming}))
+
+      state
+    end)
+  end
+
+  # call the callback on each successive piece of data if a callback exists
+  def handle_info({:tcp, _socket, packet}, %{sub: %{callback: callback, type: type}} = state) do
     partial(packet, state, fn full_message ->
       full_message
-      |> ROS.Message.deserialize(sub.type)
-      |> sub.callback.()
+      |> ROS.Message.deserialize(type)
+      |> callback.()
 
       state
     end)
