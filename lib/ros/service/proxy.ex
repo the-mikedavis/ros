@@ -56,7 +56,8 @@ defmodule ROS.Service.Proxy do
       iex> SrvPrx.request!(:ididntmakethisserviceproxy, %StdSrv.Empty{})
       (** ROS.Service.Error) ...
   """
-  @spec request!(atom(), struct() | map(), non_neg_integer()) :: struct() | no_return()
+  @spec request!(atom(), struct() | map(), non_neg_integer()) ::
+          struct() | no_return()
   def request!(proxy, data, timeout \\ 5000) do
     case request(proxy, data, timeout) do
       {:ok, response} -> response
@@ -87,7 +88,8 @@ defmodule ROS.Service.Proxy do
            {:ok, socket} <- connect(uri),
            :ok <- send_conn_header(socket, proxy),
            {:ok, _conn_head} <- get_conn_header(socket),
-           request_module <- proxy.type |> Helpers.module() |> Module.concat(Request),
+           request_module <-
+             proxy.type |> Helpers.module() |> Module.concat(Request),
            typed_data <- Helpers.force_type(data, request_module),
            request <- ROS.Message.serialize(typed_data),
            :ok <- TCP.send(request, socket),

@@ -98,14 +98,18 @@ defmodule ROS.Node.Spec do
   if you're listening to multiple subscriber processes. This is a small use case,
   though. For common use, you should underscore the process name as shown above.
   """
-  @spec subscriber(String.t(), String.t() | module(), (struct() -> any()) | atom() | pid() | [atom() | pid()]) ::
-          {module(), %ROS.Subscriber{}}
+  @spec subscriber(
+          String.t(),
+          String.t() | module(),
+          (struct() -> any()) | atom() | pid() | [atom() | pid()]
+        ) :: {module(), %ROS.Subscriber{}}
   def subscriber(topic, type, callback) when is_function(callback) do
     {ROS.Subscriber,
      %ROS.Subscriber{topic: topic, type: type, callback: callback}}
   end
 
-  def subscriber(topic, type, listener) when is_pid(listener) or is_atom(listener) do
+  def subscriber(topic, type, listener)
+      when is_pid(listener) or is_atom(listener) do
     {ROS.Subscriber,
      %ROS.Subscriber{topic: topic, type: type, listeners: [listener]}}
   end
