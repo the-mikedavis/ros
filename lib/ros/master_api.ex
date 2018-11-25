@@ -1,6 +1,12 @@
+defmodule ROS.MasterApi.Behaviour do
+  @moduledoc false
+  @callback make_call(String.t(), [String.t()], String.t()) :: [any()]
+end
+
 defmodule ROS.MasterApi do
   require Logger
 
+  @behaviour __MODULE__.Behaviour
   @moduledoc false
 
   # The Master API formalized as functions.
@@ -71,7 +77,8 @@ defmodule ROS.MasterApi do
     ])
   end
 
-  defp make_call(name, args, target \\ ROS.SlaveApi.master_uri()) do
+  @impl __MODULE__.Behaviour
+  def make_call(name, args, target \\ ROS.SlaveApi.master_uri()) do
     Logger.debug(fn ->
       "Requesting: [\"#{name}\", #{inspect(args)}] from #{target}"
     end)
@@ -93,8 +100,4 @@ defmodule ROS.MasterApi do
 
     call
   end
-end
-
-defmodule ROS.MasterApi.Behaviour do
-  @callback make_call(String.t(), [String.t()], String.t()) :: [any()]
 end
