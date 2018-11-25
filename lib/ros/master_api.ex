@@ -31,7 +31,11 @@ defmodule ROS.MasterApi do
   end
 
   def request_topic(callerid, topic, transport, target) do
-    make_call("requestTopic", [callerid, topic, transport], target)
+    make_call(
+      "requestTopic",
+      [callerid, ROS.Helpers.type(topic), transport],
+      target
+    )
   end
 
   def register_service(service, service_port) do
@@ -62,7 +66,7 @@ defmodule ROS.MasterApi do
     make_call("registerSubscriber", [
       Atom.to_string(sub.node_name),
       sub.topic,
-      sub.type,
+      ROS.Helpers.type(sub.type),
       "http://#{ip}:#{port}"
     ])
   end
@@ -89,4 +93,8 @@ defmodule ROS.MasterApi do
 
     call
   end
+end
+
+defmodule ROS.MasterApi.Behaviour do
+  @callback make_call(String.t(), [String.t()], String.t()) :: [any()]
 end
