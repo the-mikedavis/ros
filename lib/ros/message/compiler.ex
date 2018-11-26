@@ -1,13 +1,11 @@
 defmodule ROS.Message.Compiler do
   alias ROS.{Compiler, Helpers}
 
-  @moduledoc """
-  Message generator for Elixir based messages.
+  @moduledoc false
+  # Message generator for Elixir based messages.
+  # Converts the `*.msg` files into a module with a struct and typing.
 
-  Converts the `*.msg` files into a module with a struct and typing.
-  """
-
-  @doc "Create an Elixir module from a msg body and a name for that msg."
+  # Create a new Elixir struct given a message definition, name, and md5sum
   @spec create_module(binary(), binary(), binary()) ::
           {atom(), atom() | binary()}
   def create_module(payload, name, md5sum) do

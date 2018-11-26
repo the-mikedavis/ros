@@ -1,10 +1,12 @@
 defmodule ROS.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+
   def project do
     [
       app: :ros,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: Mix.compilers(),
@@ -17,7 +19,12 @@ defmodule ROS.MixProject do
         bless: :test
       ],
       test_coverage: [tool: ExCoveralls],
-      aliases: aliases()
+      aliases: aliases(),
+      name: "ROS",
+      package: package(),
+      source_url: "https://github.com/the-mikedavis/ros.git",
+      description: "An Actor Model client library for ROS.",
+      docs: docs()
     ]
   end
 
@@ -47,6 +54,28 @@ defmodule ROS.MixProject do
 
       # docs
       {:ex_doc, "~> 0.19.1"}
+    ]
+  end
+
+  defp package do
+    [
+      maintainers: ["Michael Davis"],
+      licenses: ["BSD3"],
+      links: %{github: "https://github.com/the-mikedavis/ros.git"},
+      files: ~w(lib LICENSE mix.exs README.md .formatter.exs)
+    ]
+  end
+
+  defp docs do
+    [
+      source_ref: "v#{@version}",
+      extras: extras()
+    ]
+  end
+
+  defp extras do
+    [
+      "guides/getting_started.md"
     ]
   end
 

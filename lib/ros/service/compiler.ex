@@ -1,13 +1,11 @@
 defmodule ROS.Service.Compiler do
   alias ROS.{Compiler, Helpers}
 
-  @moduledoc """
-  Srv generator for Elixir based services.
+  @moduledoc false
+  # Srv generator for Elixir based services.
+  # Converts the `*.srv` files into a module with a struct and typing.
 
-  Converts the `*.srv` files into a module with a struct and typing.
-  """
-
-  @doc "Create an Elixir module from a msg body and a name for that msg."
+  # Create an Elixir module from a msg body and a name for that msg.
   @spec create_module(binary(), binary(), binary()) ::
           {atom(), atom() | binary()}
   def create_module(payload, name, md5sum) do

@@ -20,7 +20,7 @@ defmodule ROS.Service.Proxy do
       ...>   ]
       ...> ]
       iex> Supervisor.start_link(children, strategy: :one_for_one)
-      iex> SrvPrx.request(:myproxy, %RospyTutorials.AddTwoInts.Request{a: 3, b: 4))
+      iex> SrvPrx.request(:myproxy, %RospyTutorials.AddTwoInts.Request{a: 3, b: 4})
       {:ok, %RospyTutorials.AddTwoInts.Response{sum: 7}}
   """
 
@@ -35,7 +35,7 @@ defmodule ROS.Service.Proxy do
   ## Examples
 
       iex> alias ROS.Service.Proxy, as: SrvPrx
-      iex> SrvPrx.request(:myproxy, %RospyTutorials.AddTwoInts.Request{a: 3, b: 4))
+      iex> SrvPrx.request(:myproxy, %RospyTutorials.AddTwoInts.Request{a: 3, b: 4})
       {:ok, %RospyTutorials.AddTwoInts.Response{sum: 7}}
   """
   @spec request(atom(), struct() | map(), non_neg_integer()) ::
@@ -51,7 +51,7 @@ defmodule ROS.Service.Proxy do
   ## Examples
 
       iex> alias ROS.Service.Proxy, as: SrvPrx
-      iex> SrvPrx.request!(:myproxy, %RospyTutorials.AddTwoInts.Request{a: 3, b: 4))
+      iex> SrvPrx.request!(:myproxy, %RospyTutorials.AddTwoInts.Request{a: 3, b: 4})
       %RospyTutorials.AddTwoInts.Response{sum: 7}
       iex> SrvPrx.request!(:ididntmakethisserviceproxy, %StdSrv.Empty{})
       (** ROS.Service.Error) ...

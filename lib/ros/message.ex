@@ -5,24 +5,23 @@ defmodule ROS.Message do
   import Helpers, only: [pack_string: 1]
 
   @moduledoc """
-  Logic and helper functions for handling ROS messages sent between nodes.
+  Functions for serializing and deserializing ROS Messages sent over the wire.
   """
 
   # The number of bytes to read to see how long a field is
 
   @block_length 4
 
-  @doc """
-  Translates a string of data from a binary packet.
-
-  The leading field is a set of 4 little endian bytes representing an integer.
-  That integer describes the length of the following field. This function
-  reads that integer (call it `n`) and then takes the next segment of `n`
-  bytes from the binary. It does this recursively until the binary has ended.
-
-  This is appropriate for using nestedly, by applying a binary and then
-  applying element-wise to the list produced.
-  """
+  @doc false
+  # Translates a string of data from a binary packet.
+  #
+  # The leading field is a set of 4 little endian bytes representing an integer.
+  # That integer describes the length of the following field. This function
+  # reads that integer (call it `n`) and then takes the next segment of `n`
+  # bytes from the binary. It does this recursively until the binary has ended.
+  #
+  # This is appropriate for using nestedly, by applying a binary and then
+  # applying element-wise to the list produced.
   @spec split(binary()) :: []
   def split(<<>>), do: []
 
@@ -32,9 +31,8 @@ defmodule ROS.Message do
     [field | split(rest)]
   end
 
-  @doc """
-  Splits a field off once. Used in the recursive implementation of split.
-  """
+  @doc false
+  # Splits a field off once. Used in the recursive implementation of split.
   @spec split_once(binary()) :: {binary(), binary()}
   def split_once(binary) do
     field_length = Satchel.unpack(binary, :uint32)
@@ -72,6 +70,7 @@ defmodule ROS.Message do
     struct(type_module, parsed_kw_list)
   end
 
+  @doc false
   @spec deserialize_take(binary(), module() | binary()) :: {struct(), binary()}
   def deserialize_take(binary, type) when is_binary(type) do
     deserialize_take(binary, Helpers.type_to_module(type))
@@ -88,9 +87,9 @@ defmodule ROS.Message do
 
   ## Examples
 
-    iex> data = %StdMsgs.ColorRGBA{r: 22.0, g: 33.0, b: 44.0, a: 0.0}
-    iex> ROS.Message.serialize(data)
-    <<16, 0, 0, 0, 0, 0, 176, 65, 0, 0, 4, 66, 0, 0, 48, 66, 0, 0, 0, 0>>
+      iex> data = %StdMsgs.ColorRGBA{r: 22.0, g: 33.0, b: 44.0, a: 0.0}
+      iex> ROS.Message.serialize(data)
+      <<16, 0, 0, 0, 0, 0, 176, 65, 0, 0, 4, 66, 0, 0, 48, 66, 0, 0, 0, 0>>
   """
   @spec serialize(struct()) :: binary()
   def serialize(%type{} = msg), do: _serialize(type.types(), "", msg)

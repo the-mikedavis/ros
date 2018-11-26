@@ -4,6 +4,7 @@ defmodule ROS.Node.Spec do
 
   Add ROS abstractions to your `lib/my_project/application.ex` like so:
 
+      iex> import ROS.Node.Spec
       iex> children = [
       ...>   node(:"/mynode", [
       ...>     publisher(:mypub, "chatter", "std_msgs/String"),
@@ -14,13 +15,18 @@ defmodule ROS.Node.Spec do
       ...>     end)
       ...>   ])
       ...> ]
-      iex> Supervisor.start_link(children, strategy: :one_for_one)
+      iex> {ok?, _pid} = Supervisor.start_link(children, strategy: :one_for_one)
+      iex> ok?
+      :ok
 
   Note that you can also write any ROS types in their module form after you've
   compiled them with `mix genmsg` or `mix gensrv`
 
+      iex> import ROS.Node.Spec
       iex> publisher(:mypub, "chatter", StdMsgs.String)
+      {ROS.Publisher, %ROS.Publisher{name: :mypub, topic: "chatter", type: StdMsgs.String}}
       iex> service_proxy(:myproxy, "add_two_ints", RospyTutorials.AddTwoInts)
+      {ROS.Service.Proxy, %ROS.Service.Proxy{name: :myproxy, service: "add_two_ints", type: RospyTutorials.AddTwoInts}}
   """
 
   @typedoc """
@@ -91,15 +97,17 @@ defmodule ROS.Node.Spec do
 
   ## Examples
 
-      iex> import ROS.Node.Spec
-      iex> children = [node(:mynode, [
-      ...>   subscriber("chatter", "std_msgs/String", &IO.inspect/1),
-      ...>   subscriber("other_chatter", "std_msgs/String", self()),
-      ...>   subscriber("another_chatter", "std_msgs/String", MyModule.ChatterServer)
-      ...> ])]
-      iex> Supervisor.start_link(children)
-      iex> flush()
-      {:"$gen_cast", {:subscription, :mynode_other_chatter, %StdMsgs.String{data: "hello world"}}}
+  ```
+  import ROS.Node.Spec
+  children = [node(:mynode, [
+    subscriber("chatter", "std_msgs/String", &IO.inspect/1),
+    subscriber("other_chatter", "std_msgs/String", self()),
+    subscriber("another_chatter", "std_msgs/String", MyModule.ChatterServer)
+  ])]
+  Supervisor.start_link(children)
+  flush()
+  # => {:"$gen_cast", {:subscription, :mynode_other_chatter, %StdMsgs.String{data: "hello world"}}}
+  ```
 
   If you're attaching a GenServer to the subscriber, you'll need to provide
   a handle for the subscription:

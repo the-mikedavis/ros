@@ -22,6 +22,10 @@ defmodule ROS.Service do
       ...>   ]
       ...> ]
       iex> Supervisor.start_link(children, strategy: :one_for_one)
+
+  The third argument may also be a module name. If it is, all incoming service
+  requests will be forwarded with `GenServer.call/2`. See
+  `ROS.Node.Spec.service/3` for more information.
   """
 
   ## Utility functions
