@@ -32,16 +32,21 @@ defmodule ROS.MixProject do
 
   defp deps do
     [
+      # upstream
       {:cowboy, "~> 2.4"},
       {:xenium, git: "https://github.com/the-mikedavis/xenium.git"},
       {:bite, git: "https://github.com/the-mikedavis/bite.git"},
       {:satchel, git: "https://github.com/the-mikedavis/satchel.git"},
 
-      # Testing and code hygiene, etc.
+      # testing
+      {:mox, "~> 0.4.0"},
       {:private, "~> 0.1.1"},
       {:excoveralls, "~> 0.7", only: :test},
       {:credo, "~> 0.9", only: :test, runtime: false},
-      {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
+
+      # docs
+      {:ex_doc, "~> 0.19.1"}
     ]
   end
 
