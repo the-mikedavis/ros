@@ -1,5 +1,5 @@
 %{
-  "bite": {:git, "https://github.com/the-mikedavis/bite.git", "fd2a69ddfd74143ed927b69a3fafc5f69ae6ec2f", []},
+  "bite": {:hex, :bite, "0.1.1", "39796ff1c952f5c1b8170dc53dba55f791dc5284303432307ed85f319e1dbb52", [:mix], [{:private, "~> 0.1.1", [hex: :private, repo: "hexpm", optional: false]}], "hexpm"},
   "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], [], "hexpm"},
   "certifi": {:hex, :certifi, "2.3.1", "d0f424232390bf47d82da8478022301c561cf6445b5b5fb6a84d49a9e76d2639", [:rebar3], [{:parse_trans, "3.2.0", [hex: :parse_trans, repo: "hexpm", optional: false]}], "hexpm"},
   "cowboy": {:hex, :cowboy, "2.4.0", "f1b72fabe9c8a5fc64ac5ac85fb65474d64733d1df52a26fad5d4ba3d9f70a9f", [:rebar3], [{:cowlib, "~> 2.3.0", [hex: :cowlib, repo: "hexpm", optional: false]}, {:ranch, "~> 1.5.0", [hex: :ranch, repo: "hexpm", optional: false]}], "hexpm"},
@@ -31,9 +31,9 @@
   "plug": {:hex, :plug, "1.6.2", "e06a7bd2bb6de5145da0dd950070110dce88045351224bd98e84edfdaaf5ffee", [:mix], [{:cowboy, "~> 1.0.1 or ~> 1.1 or ~> 2.4", [hex: :cowboy, repo: "hexpm", optional: true]}, {:mime, "~> 1.0", [hex: :mime, repo: "hexpm", optional: false]}], "hexpm"},
   "private": {:hex, :private, "0.1.1", "6227bd343bebd843e62d7bc4dba8fe970aeb0f567a33cf4249b93ef6319fa90f", [:mix], [], "hexpm"},
   "ranch": {:hex, :ranch, "1.5.0", "f04166f456790fee2ac1aa05a02745cc75783c2bfb26d39faf6aefc9a3d3a58a", [:rebar3], [], "hexpm"},
-  "satchel": {:git, "https://github.com/the-mikedavis/satchel.git", "0fd8cdee8ad9fa0707f01c1acab17707e58f9d3a", []},
+  "satchel": {:hex, :satchel, "0.1.1", "52d872e511ba516cf8ce7b158c39cbc9dddbc974cb4b990359a802c29687651f", [:mix], [{:ex_doc, "0.19.1", [hex: :ex_doc, repo: "hexpm", optional: false]}], "hexpm"},
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.1", "28a4d65b7f59893bc2c7de786dec1e1555bd742d336043fe644ae956c3497fbe", [:make, :rebar], [], "hexpm"},
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.3.1", "a1f612a7b512638634a603c8f401892afbf99b8ce93a45041f8aaca99cadb85e", [:rebar3], [], "hexpm"},
-  "xenium": {:git, "https://github.com/the-mikedavis/xenium.git", "f69ecbc1faf7077eb0fbb743123b296d222bac86", []},
+  "xenium": {:hex, :xenium, "0.1.0", "fc942ebcaf574a5c6460ccdd5f3b7535b3a7cdd6e023e23c5393f5edacbf7b36", [:mix], [{:httpoison, "~> 1.0", [hex: :httpoison, repo: "hexpm", optional: false]}, {:xmlrpc, "~> 1.1", [hex: :xmlrpc, repo: "hexpm", optional: false]}], "hexpm"},
   "xmlrpc": {:hex, :xmlrpc, "1.2.0", "f741a03b417754b2f0f2eff934ce044976ff1c5d397dbfe6e98eede9cf3d427d", [:mix], [{:erlsom, "~> 1.4", [hex: :erlsom, repo: "hexpm", optional: false]}], "hexpm"},
 }

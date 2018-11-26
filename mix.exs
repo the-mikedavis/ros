@@ -41,9 +41,9 @@ defmodule ROS.MixProject do
     [
       # upstream
       {:cowboy, "~> 2.4"},
-      {:xenium, git: "https://github.com/the-mikedavis/xenium.git"},
-      {:bite, git: "https://github.com/the-mikedavis/bite.git"},
-      {:satchel, git: "https://github.com/the-mikedavis/satchel.git"},
+      {:xenium, "~> 0.1"},
+      {:bite, "~> 0.1"},
+      {:satchel, "~> 0.1"},
 
       # testing
       {:mox, "~> 0.4.0"},
