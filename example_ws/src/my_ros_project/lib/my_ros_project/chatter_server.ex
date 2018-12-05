@@ -7,7 +7,7 @@ defmodule MyRosProject.ChatterServer do
   def init(args), do: {:ok, args}
 
   def handle_cast({:subscription, _from, data}, state) do
-    Logger.info(fn -> "I heard #{data}" end)
+    Logger.info(fn -> "I heard #{inspect(data)}" end)
 
     {:noreply, state}
   end
