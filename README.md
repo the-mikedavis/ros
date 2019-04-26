@@ -1,8 +1,8 @@
 # ROS - Elixir
 
-Caution: this repo is still really heavily under development. I don't yet have
-solutions for interoperability with `rosrun` or `roslaunch`. Please use only
-for development purposes and curiosity only.
+> Caution: this repo is still under development. I don't yet have
+> solutions for interoperability with `rosrun` or `roslaunch`. Please use only
+> for development purposes and curiosity only.
 
 ROS Elixir is fully compatible with the regular way of making publishers,
 subscribers, services, and service proxies. You can do so like so:
